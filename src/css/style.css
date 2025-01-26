@@ -1,0 +1,67 @@
+.carousel-item img {
+    height: 400px; /* Maintain the aspect ratio */
+    object-fit: cover; /* Ensure the image covers the space without distortion */
+    margin: 0 auto; /* Center the images */
+  }
+
+  /* Optional: Center the carousel items themselves to ensure consistency */
+  .carousel-inner {
+    text-align: center;
+  }
+
+body{
+    background-color:#a2aebb;
+}
+.sign_up{
+  background-color: blue;
+  
+}
+
+/* Initial state: hidden */
+#signupModal {
+  display: none; /* Hide by default */
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+  padding: 20px;
+  z-index: 9999;
+}
+
+/* When 'active' class is added, show the modal */
+#signupModal.active {
+  display: block; /* Show the modal */
+}
+#calendar{
+  height: 200px !important;
+}
+a{
+  text-decoration: none;
+  color: white;
+}
+.active{
+  color: rgb(7, 57, 104) !important;
+}
+
+
+/* Initially hide the button */
+.back-to-top {
+  z-index: 9999999;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 10px 20px;
+  margin-bottom: 50px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  display: none; /* Hidden by default */
+}
+
+.back-to-top:hover {
+  background-color: #0056b3;
+}
