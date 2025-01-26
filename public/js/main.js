@@ -167,6 +167,7 @@ $(function() {
             color: white;
             text-align: center;
             padding: 10px;
+            z-index:5;
           }
           .sticky-footer a {
             margin: 0 15px;
