@@ -4,7 +4,7 @@
   "description": "This is Assignment 1 for INFT 2202.",
   "main": "index.js",
   "type": "module",
-  "repository": "https://github.com/sakshamv259/INFT2202_Saksham_Arsh.git",
+  "repository": "",
   "author": "Saksham Verma and Arsh ",
   "license": "MIT",
   "dependencies": {
