@@ -1,6 +1,6 @@
 import moment from "../../node_modules/moment/dist/moment.js";
-import { opportunities } from 'opportunities.js'; 
-import { events } from 'events.js'; 
+import { opportunities } from './opportunities.js'; 
+import { events } from './events.js'; 
 
 $(function() {
 
