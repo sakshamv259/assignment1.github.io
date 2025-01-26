@@ -1,4 +1,4 @@
-import moment from "moment.js";
+import moment from ".moment.js";
 import { opportunities } from './opportunities.js'; 
 import { events } from './events.js'; 
 
