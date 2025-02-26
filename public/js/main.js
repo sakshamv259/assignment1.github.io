@@ -1,69 +1,111 @@
-
-import { opportunities } from './opportunities.js'; 
-import { events } from './events.js'; 
+// <!-- Name: Saksham Verma, Arsh-->
+// <!-- Student ID: 100886325-->
+// <!-- Date:23-02-2025 -->
+import moment from "../../node_modules/moment/dist/moment.js";
+import { events } from './events.js';
+import { opportunities } from './opportunities.js';
 
 $(function() {
 
+// User Authentication Functionality
+    function checkAuthentication() {
+        const username = localStorage.getItem("username");
+        if (username) {
+            $(".nav-auth").html(`
+                <span class="navbar-text text-light">Welcome, ${username}</span>
+                <button class="btn btn-danger btn-sm ms-2" id="logoutBtn">Log Out</button>
+            `);
 
-    // Display Opportunities Function
-    function displayOpportunities() {
-        const Navs = $(".navitm");
-        Navs.each(function() {
-            $(this).removeClass('active');
-        });
-        
-        $('#opp').addClass('active');
-        
+            $("#logoutBtn").on("click", function () {
+                localStorage.removeItem("username");
+                location.reload();
+            });
+        } else {
+            $(".nav-auth").html(`<a href="login.html" class="btn btn-success btn-sm">Log In</a>`);
+        }
+    }
+
+    // Call the function on page load
+    $(document).ready(function () {
+        checkAuthentication();
+    });
 
 
-        const $opportunityContainer = $('.card_holder');        
-        opportunities.forEach((opp, index) => {
-            const date = moment(opp.date, "DD-MM-YYYY").format("MMMM Do, YYYY");
-            const card = `<div class="card" style="width: 18rem;">
-                            <div class="card-body">
-                                <h5 class="card-title">${opp.title}</h5>
-                                <h6 class="card-subtitle mb-2 text-muted">${date}</h6>
-                                <p class="card-text">${opp.description}</p>
-                                <button class="sign_up bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300" data-value="${index}">
-                                    Sign Up
-                                </button>
-                            </div>
-                          </div>`;
 
-            $opportunityContainer.append(card);
-        });
-  
-        // Handle Opportunity Sign Up Button
-        $('.card_holder').on('click', '.sign_up', function() {
-            const retrievedIndex = $(this).data('value');
-            openModal(retrievedIndex);
+    /** =========================
+     * Display Home Page Function
+     * ========================= */
+    function displayHome() {
+        setActiveNav('home');
+        console.log("Displaying Home Page...");
+    }
+
+    /** =========================
+     * Display News Function 
+     * - Fetch and Render News Articles
+     * ========================= */
+    function displayNews() {
+        setActiveNav('news');
+
+        const newsContainer = $("#news-container");
+        newsContainer.empty(); // Clear existing content
+        const apiKey = "883fb7ef-ff6e-4f57-b94f-22a972d7049b"; // Replace with actual API Key
+        const apiUrl = `https://api.goperigon.com/v1/all?category=Business&sourceGroup=top100&showReprints=false&apiKey=${apiKey}`;
+
+        $.ajax({
+            url: apiUrl,
+            method: "GET",
+            success: function(data) {
+                $("#loading").remove(); // Remove loading spinner
+                if (data.articles && data.articles.length > 0) {
+                    data.articles.forEach(article => {
+                        const imageUrl = article.imageUrl ? article.imageUrl : "/src/img/news.jpg"; // Fallback image
+                        const newsCard = `
+                            <div class="card mb-3">
+                                <div class="row g-0">
+                                    <div class="col-md-4">
+                                        <img src="${imageUrl}" class="img-fluid news-image" alt="news image">
+                                    </div>
+                                    <div class="col-md-8">
+                                        <div class="card-body">
+                                            <h5 class="card-title">${article.title}</h5>
+                                            <p class="card-text">${article.description || "No description available."}</p>
+                                            <p class="card-text"><small class="text-muted">Published on: ${moment(article.pubDate).format("MMMM Do, YYYY")}</small></p>
+                                            <a href="${article.url}" target="_blank" class="btn btn-primary">Read More</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>`;
+                        newsContainer.append(newsCard);
+                    });
+                } else {
+                    newsContainer.append('<p class="text-center text-muted">No news articles found.</p>');
+                }
+            },
+            error: function() {
+                $("#loading").remove();
+                newsContainer.append('<p class="text-danger text-center">Failed to load news. Please try again later.</p>');
+            }
         });
     }
 
-    // Display Events Page Function
-    function displayEventsPage(){
-
-
-
-        const Navs = $(".navitm");
-        Navs.each(function() {
-            $(this).removeClass('active');
-        });
-        
-        $('#event').addClass('active');
+    /** =========================
+     * Display Events Function 
+     * - Fetch and Display Events
+     * ========================= */
+    function displayEventsPage() {
+        setActiveNav('event');
+        const $eventContainer = $('#calendar');
+        const $eventFilter = $('#eventFilter');
 
         const categories = [...new Set(events.map(event => event.category))];
-        console.log(categories);
-        const $eventFilter = $('#eventFilter');
         categories.forEach(category => {
             const option = `<option value="${category}">${category.charAt(0).toUpperCase() + category.slice(1)}</option>`;
             $eventFilter.append(option);
         });
-    
         $eventFilter.prepend('<option value="all">All Events</option>');
-    
-        // FullCalendar Setup
-        $('#calendar').fullCalendar({
+
+        $eventContainer.fullCalendar({
             events: events,
             eventRender: function(event, element) {
                 const selectedCategory = $('#eventFilter').val();
@@ -75,193 +117,194 @@ $(function() {
             }
         });
 
-        // Event Filter Change Handler
-        $('#eventFilter').change(function() {
-            $('#calendar').fullCalendar('rerenderEvents');
+        $eventFilter.change(function() {
+            $eventContainer.fullCalendar('rerenderEvents');
         });
     }
-  
-    // Open Modal for Sign Up
-    function openModal(index) {
-        const opportunity = opportunities[index];
-        $("#signupForm")[0].reset(); 
-        $("#signupModalLabel").text(`Sign Up for ${opportunity.title}`);
-        $("#opportunityTitle").text(opportunity.title);
-        const modalElement = document.getElementById('signupModal');
-        const modal = new bootstrap.Modal(modalElement);
-        modal.show();
-  
-        // Handle Sign Up Form Submit
-        $("#signupForm").off("submit").on("submit", function(event) {
-            event.preventDefault();
-  
-            const name = $("#name").val();
-            const email = $("#email").val();
-            const role = $("#role").val();
-  
-            if (name && email && role) {
-                $("#confirmationMessage").text(`Thank you, ${name}, for signing up for ${opportunity.title}!`).show();
-                $("#signupForm")[0].reset(); 
+// Function to Filter Opportunities
+function searchOpportunities() {
+    $("#searchInput").on("input", function () {
+        const searchText = $(this).val().toLowerCase();
+        $(".opportunity-card").each(function () {
+            const title = $(this).find(".card-title").text().toLowerCase();
+            const description = $(this).find(".card-text").text().toLowerCase();
+            if (title.includes(searchText) || description.includes(searchText)) {
+                $(this).show();
+            } else {
+                $(this).hide();
             }
         });
-    }
+    });
+}
 
-    // Submit Contact Form Function
+// Call this function when displaying opportunities
+function displayOpportunities() {
+    setActiveNav('opp');
+    const $opportunityContainer = $(".card_holder");
+    $opportunityContainer.empty();
+
+    opportunities.forEach((opp, index) => {
+        const card = `
+            <div class="card opportunity-card" style="width: 18rem;">
+                <div class="card-body">
+                    <h5 class="card-title">${opp.title}</h5>
+                    <p class="card-text">${opp.description}</p>
+                    <button class="btn btn-primary sign_up" data-value="${index}">Sign Up</button>
+                </div>
+            </div>
+        `;
+        $opportunityContainer.append(card);
+    });
+
+    $(".sign_up").on("click", function () {
+        const index = $(this).data("value");
+        openModal(index);
+    });
+
+    searchOpportunities(); // Enable search functionality
+}
+
+
+    /** =========================
+     * Display Contact Page Function 
+     * - Handles Contact Form Submission
+     * ========================= */
     function submitContactForm() {
-
-        const Navs = $(".navitm");
-        Navs.each(function() {
-            $(this).removeClass('active');
-        });
-        
-        $('#contact').addClass('active');
+        setActiveNav('contact');
         $('#contactForm').on('submit', function (event) {
             event.preventDefault();
-            
-            // Hide success/error messages initially
-            $('#successMessage').hide();
-            $('#errorMessage').hide();
-            
-            // Show the spinner while submitting
+            $('#successMessage, #errorMessage').hide();
             $('#spinner').show();
 
-            // Simulate form submission with a timeout
             setTimeout(function () {
-                // Hide the spinner after the simulated delay
                 $('#spinner').hide();
-                
-                // Show success message
                 $('#successMessage').show();
-                
-                // Reset the form after submission
                 $('#contactForm')[0].reset();
-            }, 2000); // Simulate a 2-second delay
+            }, 2000);
         });
     }
 
-    function createStickyFooter(){
-        const footer = document.createElement('footer');
-        footer.classList.add('sticky-footer');
-      
-        const privacyLink = document.createElement('a');
-        privacyLink.href = '/privacy-policy';
-        privacyLink.textContent = 'Privacy Policy';
-      
-        const termsLink = document.createElement('a');
-        termsLink.href = '/terms-of-service';
-        termsLink.textContent = 'Terms of Service';
-      
-        footer.appendChild(privacyLink);
-        footer.appendChild(termsLink);
-      
-        document.body.appendChild(footer);
-      
-        // CSS to make the footer sticky
-        const style = document.createElement('style');
-        style.textContent = `
-          .sticky-footer {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            background-color: #333;
-            color: white;
-            text-align: center;
-            padding: 10px;
-            z-index:5;
-          }
-          .sticky-footer a {
-            margin: 0 15px;
-            color: white;
-            text-decoration: none;
-          }
-          .sticky-footer a:hover {
-            text-decoration: underline;
-          }
-        `;
-        document.head.appendChild(style);
+    /** =========================
+     * Display About Page Function
+     * ========================= */
+    function displayAbout() {
+        setActiveNav('about');
     }
 
-    function backToTop(){
-        const backToTopButton = document.getElementById('backToTop');
-    window.addEventListener('scroll', function() {
-        if (window.scrollY > 200) {
-        backToTopButton.style.display = 'block'; 
-        } else {
-        backToTopButton.style.display = 'none';  
+    /** =========================
+     * Display Gallery Function 
+     * - Fetch and Display Images Dynamically
+     * ========================= */
+function displayGallery() {
+    setActiveNav('gal'); // Set navigation state
+
+    const $galleryContainer = $('#gallery-container');
+    $galleryContainer.empty(); // Clear existing content
+
+    // Fetch the gallery images from the JSON file
+    $.ajax({
+        url: '/src/js/gallery.json', // Ensure this is the correct path to your JSON file
+        method: 'GET',
+        dataType: 'json',
+        success: function(images) {
+            if (images.length > 0) {
+                const rowContainer = $('<div class="row"></div>'); // Bootstrap row for better alignment
+
+                images.forEach(image => {
+                    const imgElement = `
+                        <div class="col-md-4 gallery-container">
+                            <a href="${image.url}" data-lightbox="gallery" data-title="${image.caption}">
+                                <img src="${image.url}" class="gallery-image img-fluid" alt="Gallery Image">
+                            </a>
+                            <p class="text-center mt-2">${image.caption}</p>
+                        </div>`;
+
+                    rowContainer.append(imgElement);
+                });
+
+                $galleryContainer.append(rowContainer);
+            } else {
+                $galleryContainer.append('<p class="text-center text-muted">No gallery images available.</p>');
+            }
+        },
+        error: function() {
+            $galleryContainer.append('<p class="text-danger text-center">Failed to load gallery images. Please try again later.</p>');
         }
     });
-    backToTopButton.addEventListener('click', function() {
-        window.scrollTo({
-        top: 0,
-        behavior: 'smooth'  
-        });
-    });
+}
+
+
+
+    /** =========================
+     * Function to Handle Navigation Active States
+     * ========================= */
+    function setActiveNav(navId) {
+        $(".navitm").removeClass("active");
+        $(`#${navId}`).addClass("active");
     }
 
-
-    function displayHome(){
-        const Navs = $(".navitm");
-        Navs.each(function() {
-            $(this).removeClass('active');
-        });
-        
-        $('#home').addClass('active');
-        
-    }
-
-
-
-
-    function displayAbout(){
-        const Navs = $(".navitm");
-        Navs.each(function() {
-            $(this).removeClass('active');
-        });
-        
-        $('#about').addClass('active');
-    }
-    // Start Function to Initialize App
+    /** =========================
+     * Initialize App - Determine which function to call 
+     * based on the page title
+     * ========================= */
     function start() {
-        const navbar = document.querySelector('.navbar'); 
-        const donateLink = document.createElement('a');
-        donateLink.href = '/donate';
-        donateLink.textContent = 'Donate';
-        navbar.appendChild(donateLink);
-      
-        //changing the opportunities link text
-        const opportunitiesLink = $(".opp_to_volunteer");
-        opportunitiesLink.text('Volunteer Now');
         console.log("Starting app...");
 
-        backToTop();
-        createStickyFooter();
+        $("#feedbackForm").on("submit", function (event) {
+        event.preventDefault();
+
+        let feedbackData = {
+            name: $("#feedbackName").val(),
+            email: $("#feedbackEmail").val(),
+            message: $("#feedbackMessage").val()
+        };
+
+        $.ajax({
+            url: "#", 
+            method: "POST",
+            data: JSON.stringify(feedbackData),
+            contentType: "application/json; charset=UTF-8",
+            success: function (response) {
+                $("#feedbackSummary").html(`
+                    <strong>Name:</strong> ${feedbackData.name}<br>
+                    <strong>Email:</strong> ${feedbackData.email}<br>
+                    <strong>Message:</strong> ${feedbackData.message}
+                `);
+                $("#feedbackModal").modal("show");
+                $("#feedbackForm")[0].reset();
+            },
+            error: function () {
+                alert("Failed to submit feedback. Please try again.");
+            }
+        });
+    });
         switch (document.title) {
             case "Home":
-                displayHome()
-                console.log("homepage");
+                displayHome();
                 break;
             case "Opportunities":
                 displayOpportunities();
                 break;
             case "Events":
-                console.log("events page");
                 displayEventsPage();
-                break;  // Added break to prevent fall-through to the next case
+                break;
             case "Contact":
-                console.log("contact us page");
                 submitContactForm();
                 break;
             case "About":
                 displayAbout();
-                console.log("about page");
+                break;
+            case "News":
+                displayNews();
+                break;
+            case "Gallery":
+                displayGallery();
                 break;
             default:
-                console.log("default");
+                console.log("Unknown page.");
                 break;
         }
     }
 
-    // Initialize App on DOM Ready
     start();
-
 });
