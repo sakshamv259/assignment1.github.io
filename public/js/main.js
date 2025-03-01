@@ -1,7 +1,7 @@
 // <!-- Name: Saksham Verma, Arsh-->
 // <!-- Student ID: 100886325-->
 // <!-- Date:23-02-2025 -->
-import moment from "/node_modules/moment/dist/moment.js";
+import moment from "https://cdn.jsdelivr.net/npm/moment@2.29.4/dist/moment.min.js";
 import { events } from './events.js';
 import { opportunities } from './opportunities.js';
 
