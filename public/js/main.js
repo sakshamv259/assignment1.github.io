@@ -203,7 +203,7 @@ function displayGallery() {
 
     // Fetch the gallery images from the JSON file
     $.ajax({
-        url: '/src/js/gallery.json', // Ensure this is the correct path to your JSON file
+        url: 'public/js/gallery.json', // Ensure this is the correct path to your JSON file
         method: 'GET',
         dataType: 'json',
         success: function(images) {
