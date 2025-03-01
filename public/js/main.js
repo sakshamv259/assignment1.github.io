@@ -59,7 +59,7 @@ $(function() {
                 $("#loading").remove(); // Remove loading spinner
                 if (data.articles && data.articles.length > 0) {
                     data.articles.forEach(article => {
-                        const imageUrl = article.imageUrl ? article.imageUrl : "/src/img/news.jpg"; // Fallback image
+                        const imageUrl = article.imageUrl ? article.imageUrl : "public/img/news.jpg"; // Fallback image
                         const newsCard = `
                             <div class="card mb-3">
                                 <div class="row g-0">
