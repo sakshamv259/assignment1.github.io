@@ -1,9 +1,15 @@
 // API Configuration
-const API_BASE_URL = window.location.hostname === 'volunteer-backend-cy21.onrender.com' 
-    ? 'https://volunteer-backend-cy21.onrender.com/api'
-    : 'http://localhost:8080/api';
+const API_BASE_URL = (() => {
+    const hostname = window.location.hostname;
+    if (hostname === 'sakshamv259.github.io' || hostname === 'assignment1-github-io.vercel.app') {
+        return 'https://volunteer-backend-cy21.onrender.com/api';
+    } else if (hostname === 'volunteer-backend-cy21.onrender.com') {
+        return 'https://volunteer-backend-cy21.onrender.com/api';
+    }
+    return 'http://localhost:8080/api';
+})();
 
-console.log('API Base URL:', API_BASE_URL);
+console.log('[API] Using base URL:', API_BASE_URL);
 
 // Debug flag
 const DEBUG = true;
@@ -27,22 +33,34 @@ function log(...args) {
 // Authentication functions
 async function login(username, password) {
     try {
-        log('Attempting login...', { username });
+        console.log('[API] Login attempt for user:', username);
         const response = await fetch(`${API_BASE_URL}/auth/login`, {
+            ...defaultFetchOptions,
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ username, password }),
-            credentials: 'include'
+            body: JSON.stringify({ username, password })
         });
-        
+
         const data = await response.json();
-        log('Login response:', data);
-        return data;
+        console.log('[API] Login response status:', response.status);
+
+        if (!response.ok) {
+            console.error('[API] Login failed:', data.message);
+            throw new Error(data.message || 'Login failed');
+        }
+
+        if (!data.success || !data.user) {
+            console.error('[API] Invalid login response:', data);
+            throw new Error('Invalid login response from server');
+        }
+
+        console.log('[API] Login successful:', data.user.username);
+        return {
+            success: true,
+            user: data.user
+        };
     } catch (error) {
-        log('Login error:', error);
-        return { success: false, message: 'Login failed' };
+        console.error('[API] Login error:', error);
+        throw error;
     }
 }
 

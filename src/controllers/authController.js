@@ -116,35 +116,41 @@ const login = async (req, res) => {
         req.session.user = userForSession;
         req.session.authenticated = true;
 
-        // Save session explicitly
-        await new Promise((resolve, reject) => {
-            req.session.save((err) => {
-                if (err) {
-                    console.error('Session save error:', err);
-                    reject(err);
-                }
-                resolve();
+        // Save session explicitly with proper error handling
+        try {
+            await new Promise((resolve, reject) => {
+                req.session.save((err) => {
+                    if (err) reject(err);
+                    else resolve();
+                });
             });
-        });
 
-        // Log successful login
-        console.log('Login successful:', {
-            username: userForSession.username,
-            sessionID: req.sessionID
-        });
+            // Log successful login
+            console.log('Login successful:', {
+                username: userForSession.username,
+                sessionID: req.sessionID
+            });
 
-        // Send success response
-        res.status(200).json({
-            success: true,
-            message: 'Login successful',
-            user: userForSession
-        });
+            // Send success response
+            res.status(200).json({
+                success: true,
+                message: 'Login successful',
+                user: userForSession
+            });
+        } catch (sessionError) {
+            console.error('Session save error:', sessionError);
+            return res.status(500).json({
+                success: false,
+                message: 'Error creating session',
+                error: sessionError.message
+            });
+        }
     } catch (error) {
         console.error('Login error:', error);
         res.status(500).json({ 
             success: false, 
             message: 'Internal Server Error',
-            debug: error.message 
+            error: error.message 
         });
     }
 };
