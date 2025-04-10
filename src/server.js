@@ -30,6 +30,39 @@ app.use((req, res, next) => {
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
+// CORS configuration for API endpoints
+const corsOptions = {
+    origin: function(origin, callback) {
+        const allowedOrigins = [
+            'https://volunteer-backend-cy21.onrender.com',
+            'https://sakshamv259.github.io',
+            'https://assignment1-github-io.vercel.app',
+            'http://localhost:3000',
+            'http://localhost:8080',
+            'http://127.0.0.1:5500'  // For local development with Live Server
+        ];
+        
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+            callback(null, true);
+        } else {
+            console.warn(`[CORS] Blocked request from unauthorized origin: ${origin}`);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+    exposedHeaders: ['Set-Cookie'],
+    maxAge: 600 // Cache preflight request for 10 minutes
+};
+
+// Trust first proxy and apply CORS before other middleware
+app.set('trust proxy', 1);
+app.use(cors(corsOptions));
+
 // Session configuration
 const sessionConfig = {
     secret: process.env.SESSION_SECRET || 'your-secret-key',
@@ -46,17 +79,14 @@ const sessionConfig = {
     },
     store: MongoStore.create({
         mongoUrl: process.env.MONGODB_URI,
-        ttl: 24 * 60 * 60, // 24 hours
+        ttl: 24 * 60 * 60,
         autoRemove: 'native',
-        touchAfter: 24 * 3600,
         crypto: {
             secret: process.env.SESSION_SECRET || 'your-secret-key'
         },
         collectionName: 'sessions',
-        autoRemoveInterval: 10, // Check expired sessions every 10 minutes
-        stringify: false, // Don't stringify session data
-        touchAfter: 24 * 3600, // Only update session if data changes
-        // Add connection options for better reliability
+        autoRemoveInterval: 10,
+        stringify: false,
         mongoOptions: {
             useNewUrlParser: true,
             useUnifiedTopology: true,
@@ -101,26 +131,7 @@ app.use((req, res, next) => {
 // Attach user to request if authenticated
 app.use(attachUser);
 
-// CORS configuration for API endpoints
-const corsOptions = {
-    origin: process.env.NODE_ENV === 'production' 
-        ? [
-            'https://volunteer-backend-cy21.onrender.com',
-            'https://sakshamv259.github.io',
-            'https://assignment1-github-io.vercel.app'
-        ]
-        : ['http://localhost:3000', 'http://localhost:8080'],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin'],
-    exposedHeaders: ['Set-Cookie']
-};
-
-// Trust first proxy for secure cookies
-app.enable('trust proxy');
-app.use(cors(corsOptions));
-
-// Body parsing middleware
+// Body parsing middleware - must come after CORS and before routes
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

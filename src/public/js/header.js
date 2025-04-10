@@ -1,102 +1,147 @@
-// Protected pages that require authentication
+// List of pages that require authentication
 const protectedPages = ['eventPlanning', 'statistics'];
 
-// Function to update header based on authentication status
+// Update header based on authentication state
 async function updateHeader() {
-    const currentPath = window.location.pathname;
-    // Remove leading slash and .html extension
-    const currentPage = currentPath.split('/').pop().replace('.html', '');
-    console.log('[Header] Checking page access:', { 
-        currentPage, 
-        currentPath,
-        isProtected: protectedPages.includes(currentPage)
-    });
-
     try {
-        const response = await verifySession();
-        console.log('[Auth] Session verification result:', response);
-
-        if (response.success && response.user) {
-            console.log('[Auth] User is authenticated:', response.user);
-            setLoggedInHeader(response.user);
-            return;
-        }
-
-        console.log('[Auth] User not authenticated');
-        setLoginButton();
+        // Get current page (remove .html and leading slash)
+        let currentPage = window.location.pathname.split('/').pop().replace('.html', '');
+        if (currentPage === '') currentPage = 'index';
+        
+        console.log('[Header] Current page:', currentPage);
+        console.log('[Header] Is protected page:', protectedPages.includes(currentPage));
+        
+        // Check if user is already stored in localStorage
+        const storedUser = localStorage.getItem('user');
+        let isAuthenticated = false;
+        let user = null;
+        
+        if (storedUser) {
+            // We have a stored user, but verify the session is still valid
+            console.log('[Header] Found stored user, verifying session...');
+            user = JSON.parse(storedUser);
             
-        // For protected pages, let the server handle the redirect
-        // The server will store the return URL in the session
-        if (protectedPages.includes(currentPage)) {
-            console.log('[Auth] Protected page access attempt - server will handle redirect');
+            try {
+                // Verify with the server
+                const result = await window.api.verifySession();
+                isAuthenticated = result.isAuthenticated;
+                
+                if (isAuthenticated) {
+                    console.log('[Header] Session verified with server');
+                    // Update with latest user data if available
+                    if (result.user) {
+                        user = result.user;
+                        localStorage.setItem('user', JSON.stringify(user));
+                    }
+                } else {
+                    console.log('[Header] Session invalid or expired');
+                    localStorage.removeItem('user');
+                    user = null;
+                }
+            } catch (error) {
+                console.error('[Header] Error verifying session:', error);
+                isAuthenticated = false;
+                localStorage.removeItem('user');
+                user = null;
+            }
+        } else {
+            // No stored user, check with server
+            console.log('[Header] No stored user, checking with server...');
+            try {
+                const result = await window.api.verifySession();
+                isAuthenticated = result.isAuthenticated;
+                user = result.user;
+                
+                if (isAuthenticated && user) {
+                    // Store user for future use
+                    localStorage.setItem('user', JSON.stringify(user));
+                    console.log('[Header] Session verified, user stored');
+                }
+            } catch (error) {
+                console.error('[Header] Error checking authentication:', error);
+            }
+        }
+        
+        console.log('[Header] Authentication status:', {
+            isAuthenticated,
+            username: user?.username || 'none',
+            currentPage
+        });
+        
+        // Update header UI based on authentication status
+        if (isAuthenticated && user) {
+            setLoggedInHeader(user);
+        } else {
+            setLoginButton();
+            
+            // If on a protected page and not authenticated, store current page and redirect to login
+            if (protectedPages.includes(currentPage)) {
+                console.log('[Header] Protected page access attempted, redirecting to login');
+                sessionStorage.setItem('returnTo', window.location.pathname);
+                window.location.href = '/login';
+            }
         }
     } catch (error) {
-        console.error('[Auth] Authentication check failed:', error);
+        console.error('[Header] Error updating header:', error);
+        // Default to login button on error
         setLoginButton();
     }
 }
 
-// Helper function to set logged in header
+// Set the header for logged in users
 function setLoggedInHeader(user) {
-    console.log('[Header] Setting logged in header for user:', user.username);
-    const authSection = document.querySelector('#auth-section') || document.querySelector('.nav-auth');
-    if (!authSection) {
-        console.error('[Header] Auth section not found in DOM');
-        return;
-    }
-
-    authSection.innerHTML = `
-        <div class="d-flex align-items-center">
-            <span class="navbar-text text-light me-3">Welcome, ${user.username}</span>
-            <button class="btn btn-outline-light btn-sm" id="logoutBtn">Logout</button>
-        </div>
-    `;
-
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', handleLogout);
-        console.log('[Header] Logout button handler attached');
-    }
-}
-
-// Helper function to set login button
-function setLoginButton() {
-    console.log('[Header] Setting login button');
-    const authSection = document.querySelector('#auth-section') || document.querySelector('.nav-auth');
-    if (!authSection) {
-        console.error('[Header] Auth section not found in DOM');
-        return;
-    }
-
-    const currentPath = window.location.pathname;
-    const isProtectedPage = protectedPages.includes(currentPath.split('/').pop().replace('.html', ''));
+    const headerNav = document.querySelector('.header-nav');
+    if (!headerNav) return;
     
-    authSection.innerHTML = `
-        <a href="/login${isProtectedPage ? '?returnTo=' + encodeURIComponent(currentPath) : ''}" class="btn btn-outline-light btn-sm">Login</a>
+    // Find or create the user info container
+    let userInfo = document.querySelector('.user-info');
+    if (!userInfo) {
+        userInfo = document.createElement('div');
+        userInfo.className = 'user-info';
+        headerNav.appendChild(userInfo);
+    }
+    
+    // Update user info
+    userInfo.innerHTML = `
+        <span class="username">Welcome, ${user.username}</span>
+        <button id="logout-btn" class="btn btn-outline-light">Logout</button>
     `;
+    
+    // Add logout handler
+    document.getElementById('logout-btn').addEventListener('click', handleLogout);
 }
 
-// Logout handler
+// Set the login button for non-authenticated users
+function setLoginButton() {
+    const headerNav = document.querySelector('.header-nav');
+    if (!headerNav) return;
+    
+    // Remove user info if exists
+    const userInfo = document.querySelector('.user-info');
+    if (userInfo) userInfo.remove();
+    
+    // Add login button if it doesn't exist
+    if (!document.querySelector('.login-btn')) {
+        const loginBtn = document.createElement('a');
+        loginBtn.href = '/login';
+        loginBtn.className = 'btn btn-outline-light login-btn';
+        loginBtn.textContent = 'Login';
+        headerNav.appendChild(loginBtn);
+    }
+}
+
+// Handle logout
 async function handleLogout() {
     try {
-        const result = await window.api.logout();
-        if (result.success) {
-            console.log('[Auth] Logout successful, redirecting to login page');
-            window.location.href = '/login';
-        } else {
-            console.error('[Auth] Logout failed:', result.message);
-        }
+        console.log('[Header] Logging out...');
+        await window.api.logout();
+        // Note: The logout function in api.js already handles redirection
     } catch (error) {
-        console.error('[Auth] Logout error:', error);
+        console.error('[Header] Logout error:', error);
+        // Fallback redirect
+        window.location.href = '/login';
     }
 }
 
-// Initialize header on page load
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('[Header] Page loaded, initializing header...');
-    try {
-        await updateHeader();
-    } catch (error) {
-        console.error('[Header] Error during initialization:', error);
-    }
-}); 
+// Initialize header when DOM is loaded
+document.addEventListener('DOMContentLoaded', updateHeader); 

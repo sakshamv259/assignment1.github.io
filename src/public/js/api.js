@@ -38,68 +38,47 @@ async function login(username, password) {
             origin: window.location.origin
         });
 
-        // Ensure credentials are provided
-        if (!username || !password) {
-            throw new Error('Username and password are required');
-        }
-
         const response = await fetch(`${API_BASE_URL}/auth/login`, {
             ...defaultFetchOptions,
             method: 'POST',
             body: JSON.stringify({ username, password })
         });
 
-        // Log response details for debugging
         console.log('[API] Login response status:', response.status);
         console.log('[API] Login response headers:', Object.fromEntries([...response.headers.entries()]));
 
-        let data;
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-            data = await response.json();
-            console.log('[API] Login response data:', data);
-        } else {
-            const text = await response.text();
-            console.error('[API] Non-JSON response:', text);
-            throw new Error('Invalid response format from server');
-        }
+        const data = await response.json();
+        console.log('[API] Login response data:', data);
 
-        // Handle non-200 responses
         if (!response.ok) {
-            const error = new Error(data.message || 'Login failed');
-            error.status = response.status;
-            error.data = data;
-            console.error('[API] Login failed:', {
-                status: response.status,
-                message: data.message,
-                error: data.error
-            });
-            throw error;
+            throw new Error(data.message || 'Login failed');
         }
 
-        // Store session info
-        if (data.sessionID) {
-            localStorage.setItem('sessionID', data.sessionID);
+        // Store user info in localStorage for client-side access
+        if (data.user) {
             localStorage.setItem('user', JSON.stringify(data.user));
+            console.log('[API] User data stored in localStorage');
         }
 
+        // Check if there's a return URL to redirect to
+        const returnTo = data.returnTo || sessionStorage.getItem('returnTo') || '/';
+        console.log('[API] Return URL after login:', returnTo);
+        
+        // Clear the stored return URL
+        sessionStorage.removeItem('returnTo');
+        
+        // Small delay to ensure session is fully established
+        setTimeout(() => {
+            window.location.href = returnTo;
+        }, 300);
+        
         return {
             success: true,
             user: data.user
         };
     } catch (error) {
-        console.error('[API] Login error:', {
-            message: error.message,
-            status: error.status,
-            data: error.data,
-            stack: error.stack
-        });
-
-        throw new Error(
-            error.data?.message || 
-            error.message || 
-            'An unexpected error occurred during login'
-        );
+        console.error('[API] Login error:', error);
+        throw error;
     }
 }
 
@@ -129,80 +108,73 @@ async function register(username, email, password) {
 
 async function logout() {
     try {
+        console.log('[API] Logging out...');
+        
         const response = await fetch(`${API_BASE_URL}/auth/logout`, {
             ...defaultFetchOptions,
-            method: 'POST',
-            headers: {
-                ...defaultFetchOptions.headers,
-                'Origin': window.location.origin
-            }
+            method: 'POST'
         });
 
-        const data = await response.json();
-        console.log('[API] Logout response:', data);
+        console.log('[API] Logout response:', {
+            status: response.status,
+            ok: response.ok
+        });
 
-        // Clear all session data
-        localStorage.removeItem('sessionID');
+        // Clear user data regardless of server response
         localStorage.removeItem('user');
-
+        
+        const data = await response.json();
+        
+        // Redirect to login page after logout
+        window.location.href = '/login';
+        
         return {
-            success: response.ok && data.success,
-            message: data.message
+            success: response.ok && data.success
         };
     } catch (error) {
         console.error('[API] Logout error:', error);
-        // Clear session data even if logout fails
-        localStorage.removeItem('sessionID');
+        // Clear user data even on error
         localStorage.removeItem('user');
-        return {
-            success: false,
-            message: 'An error occurred during logout'
-        };
+        // Redirect to login page even on error
+        window.location.href = '/login';
+        throw error;
     }
 }
 
 async function verifySession() {
     try {
-        const sessionID = localStorage.getItem('sessionID');
-        const origin = window.location.origin;
-        console.log('[API] Verifying session:', { sessionID, origin });
-
+        console.log('[API] Verifying session at:', `${API_BASE_URL}/auth/verify`);
+        
         const response = await fetch(`${API_BASE_URL}/auth/verify`, {
             ...defaultFetchOptions,
-            headers: {
-                ...defaultFetchOptions.headers,
-                'X-Session-ID': sessionID || '',
-                'Origin': origin
-            }
+            method: 'GET'
+        });
+
+        console.log('[API] Verify session response:', {
+            status: response.status,
+            ok: response.ok
         });
 
         const data = await response.json();
-        console.log('[API] Verify session response:', {
-            status: response.status,
-            data
-        });
-
-        if (!response.ok) {
-            // Clear invalid session data
-            localStorage.removeItem('sessionID');
-            localStorage.removeItem('user');
-            throw new Error(data.message || 'Session verification failed');
-        }
-
-        // Update stored user data if needed
-        if (data.success && data.user) {
+        
+        // Update stored user data if verified
+        if (response.ok && data.success && data.user) {
             localStorage.setItem('user', JSON.stringify(data.user));
+        } else if (!response.ok) {
+            // Clear stored user data if not authenticated
+            localStorage.removeItem('user');
         }
-
-        return data;
+        
+        return {
+            isAuthenticated: response.ok && data.success,
+            user: data.user
+        };
     } catch (error) {
-        console.error('[API] Verify session error:', error);
-        // Clear session data on error
-        localStorage.removeItem('sessionID');
+        console.error('[API] Session verification error:', error);
         localStorage.removeItem('user');
-        return { 
-            success: false, 
-            message: error.message || 'Session verification failed'
+        return {
+            isAuthenticated: false,
+            user: null
         };
     }
 }

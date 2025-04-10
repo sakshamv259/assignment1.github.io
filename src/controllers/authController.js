@@ -6,7 +6,8 @@ const ALLOWED_ORIGINS = [
     'https://assignment1-github-io.vercel.app',
     'https://sakshamv259.github.io',
     'http://localhost:3000',
-    'http://localhost:8080'
+    'http://localhost:8080',
+    'http://127.0.0.1:5500'
 ];
 
 const register = async (req, res) => {
@@ -82,19 +83,6 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
     try {
-        // Set CORS headers first
-        const origin = req.get('origin');
-        console.log('[Auth] Request origin:', origin);
-        
-        if (ALLOWED_ORIGINS.includes(origin)) {
-            res.header('Access-Control-Allow-Origin', origin);
-            res.header('Access-Control-Allow-Credentials', 'true');
-            res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
-            res.header('Access-Control-Allow-Headers', 'Content-Type, Accept, X-Session-ID');
-        } else {
-            console.warn('[Auth] Unauthorized origin:', origin);
-        }
-
         // Log complete request details
         console.log('[Auth] Login request:', {
             body: req.body,
@@ -192,64 +180,51 @@ const login = async (req, res) => {
         if (process.env.NODE_ENV === 'production') {
             req.session.cookie.secure = true;
             req.session.cookie.sameSite = 'none';
-            req.session.cookie.maxAge = 24 * 60 * 60 * 1000; // 24 hours
         }
 
-        // Save session with detailed error handling
-        try {
-            await new Promise((resolve, reject) => {
-                req.session.save((err) => {
-                    if (err) {
-                        console.error('[Auth] Session save error:', {
-                            error: err,
-                            sessionID: req.sessionID,
-                            cookie: req.session.cookie
-                        });
-                        reject(err);
-                    } else {
-                        resolve();
-                    }
-                });
-            });
-
-            // Log successful login with complete session info
-            console.log('[Auth] Login successful:', {
-                username: userForSession.username,
-                sessionID: req.sessionID,
-                cookie: {
-                    secure: req.session.cookie.secure,
-                    sameSite: req.session.cookie.sameSite,
-                    maxAge: req.session.cookie.maxAge,
-                    path: req.session.cookie.path
+        // Save session with promise to ensure it's saved before responding
+        await new Promise((resolve, reject) => {
+            req.session.save(err => {
+                if (err) {
+                    console.error('[Auth] Session save error:', err);
+                    reject(err);
+                } else {
+                    console.log('[Auth] Session saved successfully:', {
+                        sessionID: req.sessionID,
+                        cookie: req.session.cookie,
+                        user: userForSession.username
+                    });
+                    resolve();
                 }
             });
-
-            // Send success response
-            return res.status(200).json({
-                success: true,
-                message: 'Login successful',
-                user: userForSession,
-                sessionID: req.sessionID
-            });
-        } catch (sessionError) {
-            console.error('[Auth] Session save error:', {
-                error: sessionError,
-                sessionID: req.sessionID
-            });
-            return res.status(500).json({
-                success: false,
-                message: 'Error creating session',
-                error: sessionError.message
-            });
-        }
-    } catch (error) {
-        console.error('[Auth] Unexpected login error:', {
-            error,
-            stack: error.stack
         });
-        return res.status(500).json({ 
-            success: false, 
-            message: 'Internal Server Error',
+
+        // Determine if there's a return URL
+        let returnTo = '/';
+        if (req.session.returnTo) {
+            returnTo = req.session.returnTo;
+            delete req.session.returnTo;
+            console.log('[Auth] Found returnTo URL in session:', returnTo);
+        }
+
+        console.log('[Auth] Login successful:', {
+            user: userForSession.username,
+            sessionID: req.sessionID,
+            returnTo
+        });
+
+        // Return success response with user data
+        return res.status(200).json({
+            success: true,
+            message: 'Login successful',
+            user: userForSession,
+            returnTo
+        });
+    } catch (error) {
+        console.error('[Auth] Login error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error during login',
             error: error.message
         });
     }
@@ -326,48 +301,64 @@ const getCurrentUser = async (req, res) => {
 
 const verifySession = async (req, res) => {
     try {
-        console.log('Verify session request:', {
+        console.log('[Auth] Verifying session:', {
             sessionID: req.sessionID,
-            session: req.session,
-            authenticated: req.session?.authenticated,
-            user: req.session?.user
+            hasSession: !!req.session,
+            isAuthenticated: !!(req.session && req.session.user),
+            headers: req.headers
         });
 
         // Check if session exists and is authenticated
-        if (!req.session || !req.session.authenticated || !req.session.user) {
-            return res.status(401).json({ 
-                success: false, 
-                message: 'Not authenticated',
-                debug: {
-                    hasSession: !!req.session,
-                    isAuthenticated: !!req.session?.authenticated,
-                    hasUser: !!req.session?.user
+        if (!req.session || !req.session.user) {
+            console.log('[Auth] No valid session found');
+            return res.status(401).json({
+                success: false,
+                message: 'Not authenticated'
+            });
+        }
+
+        // Look up the user to make sure they still exist
+        try {
+            const user = await User.findById(req.session.user.id, '-password');
+            
+            if (!user) {
+                console.log('[Auth] User not found in database, clearing session');
+                req.session.destroy();
+                return res.status(401).json({
+                    success: false,
+                    message: 'User no longer exists'
+                });
+            }
+
+            console.log('[Auth] Session verified for user:', user.username);
+            
+            // Refresh session to extend expiry time
+            req.session.touch();
+
+            // Return success with user data
+            return res.json({
+                success: true,
+                message: 'Session is valid',
+                user: {
+                    id: user._id.toString(),
+                    username: user.username,
+                    email: user.email,
+                    role: user.role
                 }
             });
-        }
-
-        // Verify user exists in database
-        const user = await User.findById(req.session.user.id);
-        if (!user) {
-            // Clear invalid session
-            req.session.destroy();
-            return res.status(401).json({ 
-                success: false, 
-                message: 'User not found' 
+        } catch (dbError) {
+            console.error('[Auth] Database error verifying user:', dbError);
+            return res.status(500).json({
+                success: false,
+                message: 'Error verifying user'
             });
         }
-
-        // Return success with user data
-        res.json({ 
-            success: true,
-            user: req.session.user
-        });
     } catch (error) {
-        console.error('Verify session error:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Error verifying session',
-            debug: error.message
+        console.error('[Auth] Session verification error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
         });
     }
 };
