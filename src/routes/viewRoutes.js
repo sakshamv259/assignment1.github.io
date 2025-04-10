@@ -38,10 +38,62 @@ router.get('/events', isAuthenticated, async (req, res) => {
     }
 });
 
+// News page
+router.get('/news', async (req, res) => {
+    try {
+        res.render('news', {
+            title: 'Latest News'
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        res.render('error', {
+            message: 'Failed to load news',
+            error: error
+        });
+    }
+});
+
+// Gallery page
+router.get('/gallery', async (req, res) => {
+    try {
+        res.render('gallery', {
+            title: 'Photo Gallery'
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        res.render('error', {
+            message: 'Failed to load gallery',
+            error: error
+        });
+    }
+});
+
 // Event planning page
 router.get('/event-planning', isAuthenticated, (req, res) => {
     res.render('eventPlanning', {
         title: 'Event Planning'
+    });
+});
+
+// Statistics page
+router.get('/statistics', async (req, res) => {
+    try {
+        res.render('statistics', {
+            title: 'Statistics'
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        res.render('error', {
+            message: 'Failed to load statistics',
+            error: error
+        });
+    }
+});
+
+// Contact page
+router.get('/contact', (req, res) => {
+    res.render('contact', {
+        title: 'Contact Us'
     });
 });
 
