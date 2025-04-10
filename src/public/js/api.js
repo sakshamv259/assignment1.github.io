@@ -1,7 +1,5 @@
 // API Configuration
-const API_BASE_URL = window.location.hostname === 'sakshamv259.github.io' || window.location.hostname === 'assignment1-github-io.vercel.app'
-    ? 'https://volunteer-backend-cy21.onrender.com/api'
-    : 'http://localhost:8080/api';
+const API_BASE_URL = '/api';
 
 console.log('Using API URL:', API_BASE_URL);
 

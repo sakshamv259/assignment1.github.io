@@ -18,31 +18,12 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
-// Static files - serve before any middleware
+// Serve static files from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-// CORS configuration
-const allowedOrigins = process.env.NODE_ENV === 'production'
-    ? ['https://sakshamv259.github.io', 'https://assignment1-github-io.vercel.app']
-    : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5500', 'http://localhost:8080'];
-
-console.log('Allowed Origins:', allowedOrigins);
-console.log('Environment:', process.env.NODE_ENV);
-
+// CORS configuration for API endpoints
 const corsOptions = {
-    origin: function (origin, callback) {
-        console.log('Request origin:', origin);
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) {
-            return callback(null, true);
-        }
-        if (allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            console.log('Origin not allowed:', origin);
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+    origin: true, // Allow all origins since we're serving frontend from same origin
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin'],
@@ -104,7 +85,16 @@ app.use((req, res, next) => {
 // Attach user to request if authenticated
 app.use(attachUser);
 
-// API Routes
+// Serve HTML files for all routes
+const routes = ['', 'about', 'contact', 'events', 'gallery', 'news', 'opportunities', 'event-planning', 'login'];
+routes.forEach(route => {
+    app.get(`/${route}`, (req, res) => {
+        const filePath = route === '' ? 'index.html' : `${route}.html`;
+        res.sendFile(path.join(__dirname, 'public', filePath));
+    });
+});
+
+// API Routes should come after static routes
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/gallery', galleryRoutes);
@@ -116,19 +106,6 @@ app.get('/api/health', (req, res) => {
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
         env: process.env.NODE_ENV
-    });
-});
-
-// Serve index.html for the root route
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// Serve HTML files for other routes
-const routes = ['about', 'contact', 'events', 'gallery', 'news', 'opportunities', 'event-planning', 'login'];
-routes.forEach(route => {
-    app.get(`/${route}`, (req, res) => {
-        res.sendFile(path.join(__dirname, 'public', `${route}.html`));
     });
 });
 
