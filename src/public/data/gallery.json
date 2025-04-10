@@ -1,0 +1,84 @@
+{
+    "activities": [
+        {
+            "id": 1,
+            "title": "Beach Cleanup Drive",
+            "description": "A community-led initiative to clean our local beaches and protect marine life. Over 100 volunteers participated in removing plastic waste, fishing nets, and other debris from the shoreline. The event raised awareness about ocean pollution and inspired ongoing environmental stewardship.",
+            "imageUrl": "/images/beach-cleanup.jpg",
+            "category": "Environmental",
+            "date": "2024-02-15",
+            "participants": 100,
+            "location": "Coastal Beach Area"
+        },
+        {
+            "id": 2,
+            "title": "Food Distribution Drive",
+            "description": "Organized a successful food distribution campaign reaching out to underprivileged communities. Volunteers packed and distributed nutritious meal packages to over 200 families. The initiative helped address food insecurity in local neighborhoods and fostered community solidarity.",
+            "imageUrl": "/images/food-distribution.jpg",
+            "category": "Humanitarian",
+            "date": "2024-02-20",
+            "participants": 50,
+            "location": "Community Center"
+        },
+        {
+            "id": 3,
+            "title": "Tree Planting Initiative",
+            "description": "A green initiative to increase the city's tree cover. Volunteers planted over 150 native tree species in urban areas. The project aims to improve air quality, provide shade, and create habitats for local wildlife while engaging community members in environmental conservation.",
+            "imageUrl": "/images/tree-planting.jpg",
+            "category": "Environmental",
+            "date": "2024-03-01",
+            "participants": 75,
+            "location": "City Park"
+        },
+        {
+            "id": 4,
+            "title": "Medical Camp",
+            "description": "Organized a free medical camp with volunteer healthcare workers providing basic health screenings, consultations, and awareness sessions. The camp served over 300 residents and provided valuable health education to the community.",
+            "imageUrl": "/images/medical-camp.jpg",
+            "category": "Healthcare",
+            "date": "2024-03-10",
+            "participants": 30,
+            "location": "Community Health Center"
+        },
+        {
+            "id": 5,
+            "title": "Education Workshop",
+            "description": "Conducted an interactive digital literacy workshop for underprivileged children. Volunteers taught basic computer skills, internet safety, and educational software usage to 50 students, helping bridge the digital divide in our community.",
+            "imageUrl": "/images/education-workshop.jpg",
+            "category": "Education",
+            "date": "2024-03-15",
+            "participants": 20,
+            "location": "Local School"
+        },
+        {
+            "id": 6,
+            "title": "Senior Care Visit",
+            "description": "Organized recreational activities and companionship visits at a local senior care facility. Volunteers spent quality time with elderly residents, organizing games, music sessions, and sharing stories, bringing joy and social connection to our senior community members.",
+            "imageUrl": "/images/senior-care.jpg",
+            "category": "Social Care",
+            "date": "2024-03-20",
+            "participants": 25,
+            "location": "Senior Living Center"
+        },
+        {
+            "id": 7,
+            "title": "Animal Shelter Support",
+            "description": "Provided hands-on support at the local animal shelter, including cleaning, feeding, and socializing with animals. Volunteers also helped organize an adoption event that found homes for 15 pets and raised awareness about animal welfare.",
+            "imageUrl": "/images/animal-shelter.jpg",
+            "category": "Animal Welfare",
+            "date": "2024-03-25",
+            "participants": 40,
+            "location": "City Animal Shelter"
+        },
+        {
+            "id": 8,
+            "title": "Community Garden Project",
+            "description": "Established a community garden where residents can grow their own food. The project included building raised beds, planting vegetables and herbs, and teaching sustainable gardening practices. This initiative promotes food security and community bonding.",
+            "imageUrl": "/images/community-garden.jpg",
+            "category": "Environmental",
+            "date": "2024-04-01",
+            "participants": 60,
+            "location": "Community Garden Space"
+        }
+    ]
+} 
