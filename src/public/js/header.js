@@ -19,31 +19,26 @@ async function updateHeader() {
         if (response.success && response.user) {
             console.log('[Auth] User is authenticated:', response.user);
             setLoggedInHeader(response.user);
+            // No redirection needed - user is authenticated
+            return;
+        }
+
+        console.log('[Auth] User not authenticated');
+        setLoginButton();
             
-            // If we're on a protected page, we're already authenticated, so just stay here
-            if (protectedPages.includes(currentPage)) {
-                console.log('[Auth] Already authenticated on protected page:', currentPage);
-                return;
-            }
-        } else {
-            console.log('[Auth] User not authenticated');
-            setLoginButton();
-            
-            // Only redirect if we're on a protected page
-            if (protectedPages.includes(currentPage)) {
-                console.log('[Auth] Protected page access attempt, redirecting to login');
-                sessionStorage.setItem('redirectUrl', currentPath);
-                window.location.href = '/login';
-            }
+        // Only redirect if we're on a protected page
+        if (protectedPages.includes(currentPage)) {
+            console.log('[Auth] Protected page access attempt, storing redirect URL');
+            sessionStorage.setItem('redirectUrl', currentPath);
+            // Let the server handle the redirect
         }
     } catch (error) {
         console.error('[Auth] Authentication check failed:', error);
         setLoginButton();
         
-        // Only redirect if we're on a protected page
+        // Only store redirect URL if we're on a protected page
         if (protectedPages.includes(currentPage)) {
             sessionStorage.setItem('redirectUrl', currentPath);
-            window.location.href = '/login';
         }
     }
 }

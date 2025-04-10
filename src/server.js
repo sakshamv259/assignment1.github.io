@@ -93,13 +93,28 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// Middleware to handle authentication for HTML routes
+const authenticateHtmlRoute = (req, res, next) => {
+    console.log('[Auth Route] Checking authentication for HTML route:', {
+        path: req.path,
+        hasSession: !!req.session,
+        hasUser: !!(req.session && req.session.user)
+    });
+
+    if (!req.session || !req.session.user) {
+        console.log('[Auth Route] Not authenticated, redirecting to login');
+        return res.redirect('/login');
+    }
+    next();
+};
+
 // Protected routes - require authentication
-app.get(['/eventPlanning', '/eventPlanning.html'], isAuthenticated, (req, res) => {
+app.get(['/eventPlanning', '/eventPlanning.html'], authenticateHtmlRoute, (req, res) => {
     console.log(`[${new Date().toISOString()}] Serving eventPlanning.html to user:`, req.session.user.username);
     res.sendFile(path.join(__dirname, 'public', 'eventPlanning.html'));
 });
 
-app.get(['/statistics', '/statistics.html'], isAuthenticated, (req, res) => {
+app.get(['/statistics', '/statistics.html'], authenticateHtmlRoute, (req, res) => {
     console.log(`[${new Date().toISOString()}] Serving statistics.html to user:`, req.session.user.username);
     res.sendFile(path.join(__dirname, 'public', 'statistics.html'));
 });
