@@ -23,7 +23,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // CORS configuration
 const allowedOrigins = process.env.NODE_ENV === 'production'
-    ? ['https://sakshamv259.github.io', 'https://assignment1-github-io.vercel.app', 'https://volunteer-backend-cy21.onrender.com']
+    ? ['https://sakshamv259.github.io', 'https://assignment1-github-io.vercel.app']
     : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5500', 'http://localhost:8080'];
 
 console.log('Allowed Origins:', allowedOrigins);
@@ -33,10 +33,7 @@ const corsOptions = {
     origin: function (origin, callback) {
         console.log('Request origin:', origin);
         // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) {
-            return callback(null, true);
-        }
-        if (allowedOrigins.indexOf(origin) !== -1) {
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
             console.log('Origin not allowed:', origin);
@@ -69,13 +66,16 @@ app.use(session({
         httpOnly: true,
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
+        path: '/' // Ensure cookie is available for all paths
     },
     store: MongoStore.create({
         mongoUrl: process.env.MONGODB_URI,
         ttl: 24 * 60 * 60, // 24 hours
         autoRemove: 'native',
-        touchAfter: 24 * 3600 // Only update the session every 24 hours unless the data changes
+        touchAfter: 24 * 3600, // Only update the session every 24 hours unless the data changes
+        crypto: {
+            secret: process.env.SESSION_SECRET || 'your-secret-key'
+        }
     })
 }));
 
