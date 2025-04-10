@@ -16,16 +16,17 @@ const defaultFetchOptions = {
 async function login(username, password) {
     try {
         const response = await fetch(`${API_BASE_URL}/auth/login`, {
+            ...defaultFetchOptions,
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            credentials: 'include',
             body: JSON.stringify({ username, password })
         });
 
         const data = await response.json();
-        console.log('Login response:', data);
+        console.log('Login response:', {
+            status: response.status,
+            statusText: response.statusText,
+            data: data
+        });
 
         if (!response.ok) {
             throw new Error(data.message || 'Login failed');
@@ -41,16 +42,17 @@ async function login(username, password) {
 async function register(username, email, password) {
     try {
         const response = await fetch(`${API_BASE_URL}/auth/register`, {
+            ...defaultFetchOptions,
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            credentials: 'include',
             body: JSON.stringify({ username, email, password })
         });
 
         const data = await response.json();
-        console.log('Register response:', data);
+        console.log('Register response:', {
+            status: response.status,
+            statusText: response.statusText,
+            data: data
+        });
 
         if (!response.ok) {
             throw new Error(data.message || 'Registration failed');
@@ -66,12 +68,16 @@ async function register(username, email, password) {
 async function logout() {
     try {
         const response = await fetch(`${API_BASE_URL}/auth/logout`, {
-            method: 'POST',
-            credentials: 'include'
+            ...defaultFetchOptions,
+            method: 'POST'
         });
 
         const data = await response.json();
-        console.log('Logout response:', data);
+        console.log('Logout response:', {
+            status: response.status,
+            statusText: response.statusText,
+            data: data
+        });
 
         if (!response.ok) {
             throw new Error(data.message || 'Logout failed');
@@ -87,11 +93,15 @@ async function logout() {
 async function verifySession() {
     try {
         const response = await fetch(`${API_BASE_URL}/auth/verify`, {
-            credentials: 'include'
+            ...defaultFetchOptions
         });
 
         const data = await response.json();
-        console.log('Verify session response:', data);
+        console.log('Verify session response:', {
+            status: response.status,
+            statusText: response.statusText,
+            data: data
+        });
 
         if (!response.ok) {
             throw new Error(data.message || 'Session verification failed');

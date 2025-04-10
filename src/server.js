@@ -22,10 +22,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // CORS configuration
 app.use(cors({
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://volunteer-connect.onrender.com'],
+    origin: process.env.NODE_ENV === 'production' 
+        ? ['https://volunteer-connect.onrender.com']
+        : ['http://localhost:3000', 'http://127.0.0.1:3000'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    exposedHeaders: ['Set-Cookie']
 }));
 
 // Body parsing middleware
@@ -37,9 +40,11 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: true,
     saveUninitialized: false,
+    name: 'sessionId',
     cookie: {
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
     },
     store: MongoStore.create({
@@ -68,6 +73,20 @@ app.use((req, res, next) => {
         body: req.body,
         query: req.query,
         params: req.params
+    });
+    next();
+});
+
+// Debug middleware for session tracking
+app.use((req, res, next) => {
+    console.log('Session debug:', {
+        sessionID: req.sessionID,
+        session: req.session,
+        authenticated: req.session?.authenticated,
+        user: req.session?.user,
+        cookies: req.cookies,
+        method: req.method,
+        path: req.path
     });
     next();
 });
