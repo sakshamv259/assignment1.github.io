@@ -139,6 +139,21 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// API endpoint to check authentication status
+app.get('/api/auth/check', (req, res) => {
+    const isAuthenticated = !!(req.session && req.session.user);
+    console.log('[Auth Check] Status:', { 
+        isAuthenticated, 
+        sessionID: req.sessionID,
+        user: isAuthenticated ? req.session.user.username : null
+    });
+    res.json({ 
+        success: true,
+        isAuthenticated,
+        user: isAuthenticated ? req.session.user : null
+    });
+});
+
 // Error handling middleware with improved logging
 app.use((err, req, res, next) => {
     console.error(`[${new Date().toISOString()}] Error:`, {

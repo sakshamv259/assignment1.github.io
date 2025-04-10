@@ -1,24 +1,32 @@
-const isAuthenticated = (req, res, next) => {
-    console.log('Auth check:', {
+// Middleware to attach user to request if authenticated
+const attachUser = (req, res, next) => {
+    console.log('[Auth Middleware] Checking session:', {
         hasSession: !!req.session,
+        hasUser: !!(req.session && req.session.user),
+        sessionID: req.sessionID
+    });
+    next();
+};
+
+// Middleware to check if user is authenticated
+const isAuthenticated = (req, res, next) => {
+    console.log('[Auth Middleware] Checking authentication:', {
+        hasSession: !!req.session,
+        hasUser: !!(req.session && req.session.user),
         sessionID: req.sessionID,
-        authenticated: req.session?.authenticated,
-        hasUser: !!req.session?.user
+        path: req.path
     });
 
-    if (req.session && req.session.authenticated && req.session.user) {
-        return next();
+    if (!req.session || !req.session.user) {
+        console.log('[Auth Middleware] Not authenticated, sending 401');
+        return res.status(401).json({
+            success: false,
+            message: 'Authentication required'
+        });
     }
 
-    res.status(401).json({ 
-        success: false, 
-        message: 'Authentication required',
-        debug: {
-            hasSession: !!req.session,
-            isAuthenticated: !!req.session?.authenticated,
-            hasUser: !!req.session?.user
-        }
-    });
+    console.log('[Auth Middleware] User authenticated:', req.session.user.username);
+    next();
 };
 
 const isAdmin = (req, res, next) => {
@@ -28,25 +36,8 @@ const isAdmin = (req, res, next) => {
     res.status(403).json({ success: false, message: 'Admin access required' });
 };
 
-// Add a new middleware to attach user to all responses
-const attachUser = (req, res, next) => {
-    console.log('Session Debug:', {
-        sessionID: req.sessionID,
-        hasSession: !!req.session,
-        authenticated: req.session?.authenticated,
-        hasUser: !!req.session?.user
-    });
-
-    if (req.session && req.session.user) {
-        res.locals.user = req.session.user;
-    } else {
-        res.locals.user = null;
-    }
-    next();
-};
-
 module.exports = {
+    attachUser,
     isAuthenticated,
-    isAdmin,
-    attachUser
+    isAdmin
 }; 

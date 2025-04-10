@@ -2,7 +2,7 @@
 const protectedPages = ['eventPlanning', 'statistics'];
 
 // Function to update header based on authentication status
-function updateHeader() {
+async function updateHeader() {
     const currentPath = window.location.pathname;
     // Remove leading slash and .html extension
     const currentPage = currentPath.split('/').pop().replace('.html', '');
@@ -12,46 +12,39 @@ function updateHeader() {
         isProtected: protectedPages.includes(currentPage)
     });
 
-    // Check if current page is protected
-    if (protectedPages.includes(currentPage)) {
-        console.log('[Header] Protected page detected:', currentPage);
-        verifySession()
-            .then(response => {
-                console.log('[Auth] Session verification result:', response);
-                if (!response.success) {
-                    console.log('[Auth] User not authenticated, redirecting to login');
-                    // Store the current URL before redirecting
-                    const redirectUrl = currentPath;
-                    console.log('[Auth] Storing redirect URL:', redirectUrl);
-                    sessionStorage.setItem('redirectUrl', redirectUrl);
-                    window.location.href = '/login';
-                } else {
-                    console.log('[Auth] User authenticated:', response.user);
-                    setLoggedInHeader(response.user);
-                }
-            })
-            .catch(error => {
-                console.error('[Auth] Authentication check failed:', error);
+    try {
+        const response = await verifySession();
+        console.log('[Auth] Session verification result:', response);
+
+        if (response.success && response.user) {
+            console.log('[Auth] User is authenticated:', response.user);
+            setLoggedInHeader(response.user);
+            
+            // If we're on a protected page, we're already authenticated, so just stay here
+            if (protectedPages.includes(currentPage)) {
+                console.log('[Auth] Already authenticated on protected page:', currentPage);
+                return;
+            }
+        } else {
+            console.log('[Auth] User not authenticated');
+            setLoginButton();
+            
+            // Only redirect if we're on a protected page
+            if (protectedPages.includes(currentPage)) {
+                console.log('[Auth] Protected page access attempt, redirecting to login');
                 sessionStorage.setItem('redirectUrl', currentPath);
                 window.location.href = '/login';
-            });
-    } else {
-        console.log('[Header] Public page detected:', currentPage);
-        // For non-protected pages, just check and update the header
-        verifySession()
-            .then(response => {
-                if (response.success) {
-                    console.log('[Auth] User is logged in:', response.user);
-                    setLoggedInHeader(response.user);
-                } else {
-                    console.log('[Auth] User not logged in, showing login button');
-                    setLoginButton();
-                }
-            })
-            .catch(error => {
-                console.error('[Header] Header update failed:', error);
-                setLoginButton();
-            });
+            }
+        }
+    } catch (error) {
+        console.error('[Auth] Authentication check failed:', error);
+        setLoginButton();
+        
+        // Only redirect if we're on a protected page
+        if (protectedPages.includes(currentPage)) {
+            sessionStorage.setItem('redirectUrl', currentPath);
+            window.location.href = '/login';
+        }
     }
 }
 
@@ -113,16 +106,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('[Header] Page loaded, initializing header...');
     
     try {
-        // Update header first
         await updateHeader();
-        
-        // Then check if this is a protected page
-        const currentPage = window.location.pathname.split('/').pop().replace('.html', '');
-        console.log('[Header] Current page check:', currentPage);
-        
-        if (protectedPages.includes(currentPage)) {
-            console.log('[Header] Protected page detected on load:', currentPage);
-        }
     } catch (error) {
         console.error('[Header] Error during initialization:', error);
     }
