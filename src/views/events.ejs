@@ -1,0 +1,107 @@
+<%- contentFor('head') %>
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@3.2.0/dist/fullcalendar.css" rel="stylesheet">
+
+<%- contentFor('body') %>
+<h2 class="text-center mb-4">Upcoming Events</h2>
+
+<div class="mb-4">
+    <h4>Filter Events by Category</h4>
+    <select id="eventFilter" class="form-select">
+        <option value="all">All Events</option>
+        <option value="fundraisers">Fundraisers</option>
+        <option value="cleanups">Clean-ups</option>
+        <option value="workshops">Workshops</option>
+    </select>
+</div>
+
+<div id="calendar"></div>
+
+<%- contentFor('scripts') %>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@3.2.0/dist/fullcalendar.min.js"></script>
+<script>
+    let eventsData = <%- JSON.stringify(events) %>;
+
+    function renderCalendar(events) {
+        $("#calendar").fullCalendar("destroy");
+        $("#calendar").fullCalendar({
+            header: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'month,agendaWeek,agendaDay'
+            },
+            events: events.map(event => ({
+                title: event.title,
+                start: moment(`${event.date}T${event.time}`).format(),
+                description: event.description,
+                category: event.category,
+                location: event.location,
+                allDay: false
+            })),
+            eventRender: function(event, element) {
+                element.attr('title', `
+                    ${event.title}
+                    Time: ${moment(event.start).format('h:mm A')}
+                    Location: ${event.location}
+                    Category: ${event.category}
+                `);
+            },
+            eventClick: function(event) {
+                const eventDetails = `
+                    <div class="modal fade" id="eventModal" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">${event.title}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p><strong>Date & Time:</strong> ${moment(event.start).format('MMMM D, YYYY h:mm A')}</p>
+                                    <p><strong>Location:</strong> ${event.location}</p>
+                                    <p><strong>Category:</strong> ${event.category}</p>
+                                    <p><strong>Description:</strong></p>
+                                    <p>${event.description}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Remove any existing modal
+                $('#eventModal').remove();
+                
+                // Add new modal to body
+                $('body').append(eventDetails);
+                
+                // Show the modal
+                $('#eventModal').modal('show');
+            }
+        });
+    }
+
+    $("#eventFilter").on("change", function() {
+        const selectedCategory = $(this).val();
+        const filteredEvents = selectedCategory === "all" 
+            ? eventsData 
+            : eventsData.filter(event => event.category === selectedCategory);
+        renderCalendar(filteredEvents);
+    });
+
+    // Initial render
+    renderCalendar(eventsData);
+
+    // Refresh events every minute
+    setInterval(async () => {
+        try {
+            const response = await fetch('/api/events', {
+                credentials: 'include'
+            });
+            if (response.ok) {
+                eventsData = await response.json();
+                renderCalendar(eventsData);
+            }
+        } catch (error) {
+            console.error('Error refreshing events:', error);
+        }
+    }, 60000);
+</script> 
