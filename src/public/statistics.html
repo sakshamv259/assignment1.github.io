@@ -73,7 +73,7 @@
         // Load and display statistics
         async function loadStatistics() {
             try {
-                const response = await fetch('public/data/statistics.json');
+                const response = await fetch('/data/statistics.json');
                 if (!response.ok) {
                     throw new Error('Failed to load statistics data');
                 }
