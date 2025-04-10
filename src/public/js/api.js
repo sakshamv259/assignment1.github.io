@@ -26,18 +26,23 @@ function log(...args) {
 // Authentication functions
 async function login(username, password) {
     try {
-        console.log('[API] Login attempt for user:', username);
-        
-        // Get the current origin
-        const origin = window.location.origin;
-        console.log('[API] Request origin:', origin);
+        console.log('[API] Login attempt:', {
+            username,
+            url: `${API_BASE_URL}/auth/login`,
+            origin: window.location.origin
+        });
+
+        // Ensure credentials are provided
+        if (!username || !password) {
+            throw new Error('Username and password are required');
+        }
 
         const response = await fetch(`${API_BASE_URL}/auth/login`, {
             ...defaultFetchOptions,
             method: 'POST',
             headers: {
                 ...defaultFetchOptions.headers,
-                'Origin': origin
+                'Origin': window.location.origin
             },
             body: JSON.stringify({ username, password })
         });
@@ -48,28 +53,49 @@ async function login(username, password) {
             responseHeaders[key] = value;
         });
 
-        console.log('[API] Login response headers:', responseHeaders);
-        console.log('[API] Login response status:', response.status);
+        console.log('[API] Login response:', {
+            status: response.status,
+            statusText: response.statusText,
+            headers: responseHeaders,
+            ok: response.ok
+        });
 
         const data = await response.json();
         console.log('[API] Login response data:', data);
 
+        // Handle non-200 responses
         if (!response.ok) {
             const error = new Error(data.message || 'Login failed');
             error.status = response.status;
             error.data = data;
+            console.error('[API] Login failed:', {
+                status: response.status,
+                message: data.message,
+                error: data.error
+            });
             throw error;
         }
 
+        // Validate response data
         if (!data.success || !data.user) {
+            console.error('[API] Invalid login response:', data);
             throw new Error('Invalid login response from server');
         }
 
-        // Store session info
+        // Store session info in localStorage
         if (data.sessionID) {
             localStorage.setItem('sessionID', data.sessionID);
-            console.log('[API] Session ID stored:', data.sessionID);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            console.log('[API] Session data stored:', {
+                sessionID: data.sessionID,
+                user: data.user.username
+            });
         }
+
+        console.log('[API] Login successful:', {
+            username: data.user.username,
+            sessionID: data.sessionID
+        });
 
         return {
             success: true,
@@ -79,9 +105,16 @@ async function login(username, password) {
         console.error('[API] Login error:', {
             message: error.message,
             status: error.status,
-            data: error.data
+            data: error.data,
+            stack: error.stack
         });
-        throw error;
+
+        // Rethrow with more descriptive message
+        throw new Error(
+            error.data?.message || 
+            error.message || 
+            'An unexpected error occurred during login'
+        );
     }
 }
 
@@ -113,14 +146,19 @@ async function logout() {
     try {
         const response = await fetch(`${API_BASE_URL}/auth/logout`, {
             ...defaultFetchOptions,
-            method: 'POST'
+            method: 'POST',
+            headers: {
+                ...defaultFetchOptions.headers,
+                'Origin': window.location.origin
+            }
         });
 
         const data = await response.json();
         console.log('[API] Logout response:', data);
 
-        // Clear local session data
+        // Clear all session data
         localStorage.removeItem('sessionID');
+        localStorage.removeItem('user');
 
         return {
             success: response.ok && data.success,
@@ -130,6 +168,7 @@ async function logout() {
         console.error('[API] Logout error:', error);
         // Clear session data even if logout fails
         localStorage.removeItem('sessionID');
+        localStorage.removeItem('user');
         return {
             success: false,
             message: 'An error occurred during logout'
@@ -159,14 +198,23 @@ async function verifySession() {
         });
 
         if (!response.ok) {
-            // Clear invalid session
+            // Clear invalid session data
             localStorage.removeItem('sessionID');
+            localStorage.removeItem('user');
             throw new Error(data.message || 'Session verification failed');
+        }
+
+        // Update stored user data if needed
+        if (data.success && data.user) {
+            localStorage.setItem('user', JSON.stringify(data.user));
         }
 
         return data;
     } catch (error) {
         console.error('[API] Verify session error:', error);
+        // Clear session data on error
+        localStorage.removeItem('sessionID');
+        localStorage.removeItem('user');
         return { 
             success: false, 
             message: error.message || 'Session verification failed'

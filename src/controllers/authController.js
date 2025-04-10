@@ -1,5 +1,12 @@
 const User = require('../models/User');
 
+// At the top of the file, add allowed origins
+const ALLOWED_ORIGINS = [
+    'https://volunteer-backend-cy21.onrender.com',
+    'http://localhost:3000',
+    'http://localhost:8080'
+];
+
 const register = async (req, res) => {
     try {
         console.log('Register attempt:', req.body);
@@ -73,25 +80,44 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
     try {
-        console.log('[Auth] Login attempt:', {
+        // Log complete request details
+        console.log('[Auth] Login request:', {
             body: req.body,
             headers: req.headers,
             ip: req.ip,
-            origin: req.get('origin')
+            origin: req.get('origin'),
+            sessionID: req.sessionID,
+            hasSession: !!req.session
         });
 
         const { username, password } = req.body;
 
         // Validate input
         if (!username || !password) {
+            console.log('[Auth] Missing credentials');
             return res.status(400).json({
                 success: false,
                 message: 'Username and password are required'
             });
         }
 
-        // Find user
-        const user = await User.findOne({ username });
+        // Find user with error handling
+        let user;
+        try {
+            user = await User.findOne({ username });
+            console.log('[Auth] User lookup result:', {
+                found: !!user,
+                username
+            });
+        } catch (dbError) {
+            console.error('[Auth] Database error during user lookup:', dbError);
+            return res.status(500).json({
+                success: false,
+                message: 'Database error during login',
+                error: dbError.message
+            });
+        }
+
         if (!user) {
             console.log('[Auth] User not found:', username);
             return res.status(401).json({ 
@@ -100,8 +126,23 @@ const login = async (req, res) => {
             });
         }
 
-        // Check password
-        const isMatch = await user.comparePassword(password);
+        // Check password with error handling
+        let isMatch;
+        try {
+            isMatch = await user.comparePassword(password);
+            console.log('[Auth] Password check result:', {
+                isMatch,
+                username
+            });
+        } catch (passwordError) {
+            console.error('[Auth] Password comparison error:', passwordError);
+            return res.status(500).json({
+                success: false,
+                message: 'Error verifying password',
+                error: passwordError.message
+            });
+        }
+
         if (!isMatch) {
             console.log('[Auth] Invalid password for user:', username);
             return res.status(401).json({ 
@@ -118,25 +159,37 @@ const login = async (req, res) => {
             role: user.role
         };
 
+        // Verify session middleware is working
+        if (!req.session) {
+            console.error('[Auth] Session middleware not initialized');
+            return res.status(500).json({
+                success: false,
+                message: 'Session handling error'
+            });
+        }
+
         // Set session data
         req.session.user = userForSession;
         req.session.authenticated = true;
         req.session.createdAt = new Date();
 
-        // Set secure cookie options for Render deployment
+        // Set secure cookie options for production
         if (process.env.NODE_ENV === 'production') {
             req.session.cookie.secure = true;
             req.session.cookie.sameSite = 'none';
-            // Remove domain setting as it can cause issues with cross-origin
             req.session.cookie.maxAge = 24 * 60 * 60 * 1000; // 24 hours
         }
 
-        // Save session explicitly with proper error handling
+        // Save session with detailed error handling
         try {
             await new Promise((resolve, reject) => {
                 req.session.save((err) => {
                     if (err) {
-                        console.error('[Auth] Session save error:', err);
+                        console.error('[Auth] Session save error:', {
+                            error: err,
+                            sessionID: req.sessionID,
+                            cookie: req.session.cookie
+                        });
                         reject(err);
                     } else {
                         resolve();
@@ -144,44 +197,54 @@ const login = async (req, res) => {
                 });
             });
 
-            // Log successful login
+            // Log successful login with complete session info
             console.log('[Auth] Login successful:', {
                 username: userForSession.username,
                 sessionID: req.sessionID,
-                cookie: req.session.cookie,
-                headers: res.getHeaders()
+                cookie: {
+                    secure: req.session.cookie.secure,
+                    sameSite: req.session.cookie.sameSite,
+                    maxAge: req.session.cookie.maxAge,
+                    path: req.session.cookie.path
+                }
             });
 
-            // Set CORS headers for Render deployment
+            // Set CORS headers
             const origin = req.get('origin');
-            if (origin) {
+            if (ALLOWED_ORIGINS.includes(origin)) {
                 res.header('Access-Control-Allow-Origin', origin);
             }
             res.header('Access-Control-Allow-Credentials', 'true');
             res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
             res.header('Access-Control-Allow-Headers', 'Content-Type, Accept, X-Session-ID');
 
-            // Send success response with session ID
-            res.status(200).json({
+            // Send success response
+            return res.status(200).json({
                 success: true,
                 message: 'Login successful',
                 user: userForSession,
                 sessionID: req.sessionID
             });
         } catch (sessionError) {
-            console.error('[Auth] Session save error:', sessionError);
+            console.error('[Auth] Session save error:', {
+                error: sessionError,
+                sessionID: req.sessionID
+            });
             return res.status(500).json({
                 success: false,
-                message: 'Error creating session. Please try again.',
+                message: 'Error creating session',
                 error: sessionError.message
             });
         }
     } catch (error) {
-        console.error('[Auth] Login error:', error);
-        res.status(500).json({ 
+        console.error('[Auth] Unexpected login error:', {
+            error,
+            stack: error.stack
+        });
+        return res.status(500).json({ 
             success: false, 
-            message: 'Internal Server Error. Please try again later.',
-            error: error.message 
+            message: 'Internal Server Error',
+            error: error.message
         });
     }
 };
