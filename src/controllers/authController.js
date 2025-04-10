@@ -83,58 +83,25 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
     try {
-        // Log complete request details (omit password for security)
-        const requestBody = { ...req.body };
-        if (requestBody.password) requestBody.password = '[REDACTED]';
-        
         console.log('[Auth] Login request:', {
-            body: requestBody,
-            headers: {
-                origin: req.headers.origin,
-                'content-type': req.headers['content-type'],
-                cookie: req.headers.cookie ? '[PRESENT]' : '[NONE]'
-            },
-            ip: req.ip,
-            sessionID: req.sessionID,
-            hasSession: !!req.session
+            username: req.body?.username || 'not provided',
+            origin: req.headers.origin,
+            ip: req.ip
         });
 
-        // Validate request body
-        if (!req.body) {
-            console.error('[Auth] No request body received');
-            return res.status(400).json({
-                success: false,
-                message: 'No request body received'
-            });
-        }
-
-        const { username, password } = req.body;
-
-        // Validate input
-        if (!username || !password) {
-            console.log('[Auth] Missing credentials');
+        // Basic validation
+        if (!req.body || !req.body.username || !req.body.password) {
             return res.status(400).json({
                 success: false,
                 message: 'Username and password are required'
             });
         }
 
-        // Find user (with error handling)
-        let user;
-        try {
-            user = await User.findOne({ username });
-            console.log('[Auth] User lookup result:', {
-                found: !!user,
-                username
-            });
-        } catch (dbError) {
-            console.error('[Auth] Database error during user lookup:', dbError);
-            return res.status(500).json({
-                success: false,
-                message: 'Database error occurred'
-            });
-        }
+        const { username, password } = req.body;
 
+        // Find user
+        const user = await User.findOne({ username });
+        
         if (!user) {
             console.log('[Auth] User not found:', username);
             return res.status(401).json({ 
@@ -143,22 +110,9 @@ const login = async (req, res) => {
             });
         }
 
-        // Check password (with error handling)
-        let isMatch = false;
-        try {
-            isMatch = await user.comparePassword(password);
-            console.log('[Auth] Password check result:', {
-                isMatch,
-                username
-            });
-        } catch (passwordError) {
-            console.error('[Auth] Password comparison error:', passwordError);
-            return res.status(500).json({
-                success: false,
-                message: 'Authentication error occurred'
-            });
-        }
-
+        // Check password
+        const isMatch = await user.comparePassword(password);
+        
         if (!isMatch) {
             console.log('[Auth] Invalid password for user:', username);
             return res.status(401).json({ 
@@ -167,69 +121,42 @@ const login = async (req, res) => {
             });
         }
 
-        // Create cleaned user object for session
-        const userForSession = {
+        // Create user object for response (without sensitive data)
+        const userForResponse = {
             id: user._id.toString(),
             username: user.username,
             email: user.email,
             role: user.role
         };
 
-        // Verify session middleware
-        if (!req.session) {
-            console.error('[Auth] Session middleware not available');
-            return res.status(500).json({
-                success: false,
-                message: 'Session handling error'
-            });
+        // Handle session if available
+        if (req.session) {
+            // Set session data
+            req.session.user = userForResponse;
+            req.session.authenticated = true;
+            
+            // Try to save session but don't fail if it doesn't work
+            try {
+                req.session.save();
+                console.log('[Auth] Session saved successfully:', req.sessionID);
+            } catch (sessionError) {
+                console.error('[Auth] Non-critical session save error:', sessionError);
+                // Continue without failing - client will still get the user data
+            }
+        } else {
+            console.warn('[Auth] Session not available');
         }
 
-        // Set session data
-        req.session.user = userForSession;
-        req.session.authenticated = true;
-        req.session.createdAt = new Date();
-
-        // Set secure cookie options
-        if (process.env.NODE_ENV === 'production') {
-            req.session.cookie.secure = true;
-            req.session.cookie.sameSite = 'none';
-        }
-
-        // Save session
-        try {
-            await new Promise((resolve, reject) => {
-                req.session.save(err => {
-                    if (err) {
-                        console.error('[Auth] Session save error:', err);
-                        reject(err);
-                    } else {
-                        console.log('[Auth] Session saved successfully:', {
-                            sessionID: req.sessionID,
-                            user: userForSession.username
-                        });
-                        resolve();
-                    }
-                });
-            });
-        } catch (sessionError) {
-            console.error('[Auth] Failed to save session:', sessionError);
-            // Continue anyway - send success but log the error
-            console.warn('[Auth] Continuing despite session save error');
-        }
-
-        console.log('[Auth] Login successful:', {
-            user: userForSession.username,
-            sessionID: req.sessionID
-        });
+        console.log('[Auth] Login successful for user:', username);
 
         // Return success response with user data
         return res.status(200).json({
             success: true,
             message: 'Login successful',
-            user: userForSession
+            user: userForResponse
         });
     } catch (error) {
-        console.error('[Auth] Uncaught login error:', error);
+        console.error('[Auth] Login error:', error);
         return res.status(500).json({
             success: false,
             message: 'Internal server error'

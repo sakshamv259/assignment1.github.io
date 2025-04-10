@@ -18,6 +18,9 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
+// Trust proxy for Render deployments
+app.set('trust proxy', 1);
+
 // Debug middleware for logging requests
 app.use((req, res, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
@@ -30,136 +33,80 @@ app.use((req, res, next) => {
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-// CORS configuration with detailed error handling
-app.use((req, res, next) => {
-    // Get the request origin
-    const origin = req.headers.origin;
-    console.log(`[CORS] Request from origin: ${origin || 'unknown'}`);
-    
-    // Define all allowed origins
-    const allowedOrigins = [
-        'https://volunteer-backend-cy21.onrender.com',
-        'https://sakshamv259.github.io',
-        'https://assignment1-github-io.vercel.app',
-        'http://localhost:3000',
-        'http://localhost:8080',
-        'http://127.0.0.1:5500',
-        'http://localhost:5500'
-    ];
-    
-    // Check if origin is allowed (or allow any in development)
-    if (origin && (allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production')) {
-        res.setHeader('Access-Control-Allow-Origin', origin);
-        console.log(`[CORS] Allowed origin: ${origin}`);
-    } else if (!origin) {
-        // Handle requests with no origin (like mobile apps or curl requests)
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        console.log('[CORS] No origin, allowing *');
-    } else {
-        console.warn(`[CORS] Blocked unauthorized origin: ${origin}`);
-        // Don't block request, just log it
-    }
-    
-    // Required CORS headers
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Expose-Headers', 'Set-Cookie');
-    
-    // Handle preflight requests
-    if (req.method === 'OPTIONS') {
-        console.log('[CORS] Responding to OPTIONS preflight request');
-        res.status(200).end();
-        return;
-    }
-    
-    next();
-});
+// CORS configuration - using simple cors middleware for reliability
+app.use(cors({
+    origin: function(origin, callback) {
+        const allowedOrigins = [
+            'https://volunteer-backend-cy21.onrender.com',
+            'https://sakshamv259.github.io',
+            'https://assignment1-github-io.vercel.app',
+            'http://localhost:3000', 
+            'http://localhost:8080',
+            'http://localhost:5500',
+            'http://127.0.0.1:5500'
+        ];
+        
+        // Allow requests with no origin (mobile apps, curl, etc)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+            callback(null, true);
+        } else {
+            console.warn(`[CORS] Blocked request from unauthorized origin: ${origin}`);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With']
+}));
+
+// Body parsing middleware - placed before routes
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Session configuration
 const sessionConfig = {
-    secret: process.env.SESSION_SECRET || 'your-secret-key',
+    secret: process.env.SESSION_SECRET || 'volunteer-secret-key',
     resave: true,
     saveUninitialized: false,
-    name: 'sessionId',
-    rolling: true,
-    proxy: true,
     cookie: {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    },
-    store: MongoStore.create({
+    }
+};
+
+// Configure session store and cookies based on environment
+if (process.env.NODE_ENV === 'production') {
+    sessionConfig.cookie.secure = true;
+    sessionConfig.cookie.sameSite = 'none';
+    
+    // Only add MongoDB store in production to prevent local dev issues
+    sessionConfig.store = MongoStore.create({
         mongoUrl: process.env.MONGODB_URI,
         ttl: 24 * 60 * 60,
         autoRemove: 'native',
-        crypto: {
-            secret: process.env.SESSION_SECRET || 'your-secret-key'
-        },
-        collectionName: 'sessions',
-        autoRemoveInterval: 10,
-        stringify: false,
-        mongoOptions: {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-            serverSelectionTimeoutMS: 10000,
-            heartbeatFrequencyMS: 30000
-        }
-    })
-};
+        touchAfter: 24 * 60 * 60
+    });
+}
 
 // Apply session middleware
 app.use(session(sessionConfig));
 
-// Enhanced debug middleware for session tracking
-app.use((req, res, next) => {
-    const sessionInfo = {
-        sessionID: req.sessionID,
-        hasSession: !!req.session,
-        user: req.session?.user?.username || 'none',
-        path: req.path,
-        method: req.method,
-        timestamp: new Date().toISOString(),
-        returnTo: req.session?.returnTo || 'none',
-        isSecure: req.secure,
-        userAgent: req.get('User-Agent')
-    };
-
-    console.log('[Session Debug]', sessionInfo);
-
-    // Track session expiry
-    if (req.session) {
-        const expiresAt = new Date(Date.now() + sessionConfig.cookie.maxAge);
-        console.log('[Session Expiry]', {
-            sessionID: req.sessionID,
-            expiresAt: expiresAt.toISOString(),
-            timeRemaining: Math.floor((expiresAt - Date.now()) / 1000) + ' seconds'
-        });
-    }
-
-    next();
-});
-
 // Attach user to request if authenticated
 app.use(attachUser);
 
-// Body parsing middleware - must come after CORS and before routes
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
 // API Routes
-app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/events', require('./routes/eventRoutes'));
-app.use('/api/gallery', require('./routes/galleryRoutes'));
+app.use('/api/auth', authRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/gallery', galleryRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'ok',
         timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        env: process.env.NODE_ENV
+        env: process.env.NODE_ENV || 'development'
     });
 });
 
@@ -290,29 +237,28 @@ app.get('/api/auth/check', (req, res) => {
     });
 });
 
-// Error handling middleware with improved logging
+// Error handling middleware
 app.use((err, req, res, next) => {
-    console.error(`[${new Date().toISOString()}] Error:`, {
-        url: req.url,
-        method: req.method,
-        error: err.message,
-        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
-    });
-    res.status(500).json({ 
-        success: false, 
-        message: 'Internal Server Error',
-        error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    console.error('Server error:', err);
+    res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: process.env.NODE_ENV === 'production' ? null : err.message
     });
 });
 
-// Handle 404 - Keep this as the last route
+// 404 handler
 app.use((req, res) => {
-    res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+    console.log(`[404] Not Found: ${req.method} ${req.url}`);
+    res.status(404).json({
+        success: false,
+        message: 'Not found'
+    });
 });
 
-// Start server
+// Set port and start server
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV}`);
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 }); 
