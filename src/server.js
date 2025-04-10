@@ -21,8 +21,22 @@ connectDB();
 app.use(express.static(path.join(__dirname, 'public')));
 
 // CORS configuration
+const allowedOrigins = process.env.NODE_ENV === 'production'
+    ? ['https://sakshamv259.github.io', 'https://assignment1-github-io.vercel.app']
+    : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5500', 'http://localhost:8080'];
+
+console.log('Allowed Origins:', allowedOrigins);
+console.log('Environment:', process.env.NODE_ENV);
+
 const corsOptions = {
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5500'],
+    origin: function (origin, callback) {
+        console.log('Request origin:', origin);
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
@@ -43,10 +57,11 @@ app.use(session({
     name: 'sessionId',
     rolling: true,
     cookie: {
-        secure: false, // Set to true in production with HTTPS
+        secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
-        sameSite: 'lax',
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        domain: process.env.NODE_ENV === 'production' ? '.render.com' : undefined
     },
     store: MongoStore.create({
         mongoUrl: process.env.MONGODB_URI,
@@ -59,6 +74,7 @@ app.use((req, res, next) => {
     console.log('Request:', {
         method: req.method,
         path: req.path,
+        origin: req.headers.origin,
         sessionID: req.sessionID,
         authenticated: req.session?.authenticated,
         cookies: req.cookies,
@@ -109,4 +125,5 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV}`);
 }); 
