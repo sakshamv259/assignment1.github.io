@@ -83,7 +83,7 @@ async function handleLogout() {
 }
 
 // Protected pages that require authentication
-const protectedPages = ['eventPlanning', 'eventplanning', 'event-planning', 'statistics'];
+const protectedPages = ['eventPlanning', 'statistics'];
 
 // Initialize header on page load
 document.addEventListener('DOMContentLoaded', async () => {
