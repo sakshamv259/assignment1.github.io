@@ -1,7 +1,7 @@
 // API Configuration
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:8080/api'
-    : 'https://volunteer-backend-cy21.onrender.com/api';
+const API_BASE_URL = window.location.hostname === 'sakshamv259.github.io' || window.location.hostname === 'assignment1-github-io.vercel.app'
+    ? 'https://volunteer-backend-cy21.onrender.com/api'
+    : 'http://localhost:8080/api';
 
 console.log('Using API URL:', API_BASE_URL);
 
@@ -86,7 +86,7 @@ async function logout() {
 
 async function verifySession() {
     try {
-        console.log('Verifying session...');
+        console.log('Verifying session...', { API_BASE_URL });
         const response = await fetch(`${API_BASE_URL}/auth/verify`, {
             ...defaultFetchOptions
         });
@@ -257,7 +257,7 @@ async function leaveEvent(eventId) {
     }
 }
 
-// Export all functions
+// Make the API functions available globally
 window.api = {
     login,
     register,
