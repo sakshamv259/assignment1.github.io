@@ -32,7 +32,11 @@ console.log('Environment:', process.env.NODE_ENV);
 const corsOptions = {
     origin: function (origin, callback) {
         console.log('Request origin:', origin);
-        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) {
+            return callback(null, true);
+        }
+        if (allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
             console.log('Origin not allowed:', origin);
@@ -45,7 +49,8 @@ const corsOptions = {
     exposedHeaders: ['Set-Cookie']
 };
 
-app.set('trust proxy', 1); // trust first proxy for secure cookies
+// Trust first proxy for secure cookies
+app.enable('trust proxy');
 app.use(cors(corsOptions));
 
 // Body parsing middleware
@@ -59,26 +64,23 @@ const sessionConfig = {
     saveUninitialized: false,
     name: 'sessionId',
     rolling: true,
+    proxy: true,
     cookie: {
         httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
     },
     store: MongoStore.create({
         mongoUrl: process.env.MONGODB_URI,
         ttl: 24 * 60 * 60, // 24 hours
         autoRemove: 'native',
-        touchAfter: 24 * 3600 // Only update the session every 24 hours unless the data changes
+        touchAfter: 24 * 3600, // Only update the session every 24 hours unless the data changes
+        crypto: {
+            secret: process.env.SESSION_SECRET || 'your-secret-key'
+        }
     })
 };
-
-// Configure session for production
-if (process.env.NODE_ENV === 'production') {
-    sessionConfig.cookie.secure = true; // Require HTTPS
-    sessionConfig.cookie.sameSite = 'none'; // Allow cross-site cookie
-    sessionConfig.proxy = true; // Trust the reverse proxy
-}
-
-app.use(session(sessionConfig));
 
 // Debug middleware
 app.use((req, res, next) => {

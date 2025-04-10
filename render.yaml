@@ -23,12 +23,15 @@ services:
         value: "true"
       - path: /*
         name: Access-Control-Allow-Origin
-        value: "https://sakshamv259.github.io"
+        value: "${CORS_ORIGIN}"
       - path: /*
         name: Access-Control-Allow-Methods
         value: "GET,POST,PUT,DELETE,OPTIONS"
       - path: /*
         name: Access-Control-Allow-Headers
         value: "Content-Type,Authorization,Accept,Origin"
+      - path: /*
+        name: Vary
+        value: "Origin"
     domains:
       - volunteer-backend-cy21.onrender.com 
