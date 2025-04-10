@@ -1,0 +1,20 @@
+[
+    {
+        "title": "Tech Conference 2025",
+        "date": "2025-04-15",
+        "category": "Technology",
+        "description": "A conference about the latest in AI and blockchain."
+    },
+    {
+        "title": "Community Cleanup",
+        "date": "2025-05-02",
+        "category": "Social",
+        "description": "Join us to clean up the neighborhood park."
+    },
+    {
+        "title": "Startup Pitch Night",
+        "date": "2025-05-20",
+        "category": "Business",
+        "description": "An event where startups present their ideas to investors."
+    }
+]

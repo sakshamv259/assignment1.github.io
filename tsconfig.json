@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "outDir": "./public/js",
+    "target": "es6",
+    "module": "es6",
+    "allowJs": true,
+    "checkJs": false,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": false,
+    "skipLibCheck": true
+  },
+  "include": [
+    "ts/*.ts"
+  ]
+}

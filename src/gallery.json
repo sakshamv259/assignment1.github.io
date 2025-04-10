@@ -1,0 +1,22 @@
+[
+    {
+        "url": "public/assets/gallery/image1.jpg",
+        "caption": "Volunteers helping at a food drive."
+    },
+    {
+        "url": "public/assets/gallery/image2.jpeg",
+        "caption": "Tree planting event in the community."
+    },
+    {
+        "url": "public/assets/gallery/image3.jpeg",
+        "caption": "Beach cleanup team in action!"
+    },
+    {
+        "url": "public/assets/gallery/image4.jpg",
+        "caption": "Fundraising event for children's education."
+    },
+    {
+        "url": "public/assets/gallery/image5.jpeg",
+        "caption": "Eco-friendly workshop on sustainable living."
+    }
+]
