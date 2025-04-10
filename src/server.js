@@ -18,6 +18,12 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
+// Debug middleware for logging requests
+app.use((req, res, next) => {
+    console.log(`${req.method} ${req.url}`);
+    next();
+});
+
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -56,7 +62,7 @@ const sessionConfig = {
         mongoUrl: process.env.MONGODB_URI,
         ttl: 24 * 60 * 60, // 24 hours
         autoRemove: 'native',
-        touchAfter: 24 * 3600, // Only update the session every 24 hours unless the data changes
+        touchAfter: 24 * 3600,
         crypto: {
             secret: process.env.SESSION_SECRET || 'your-secret-key'
         }
@@ -66,27 +72,11 @@ const sessionConfig = {
 // Apply session middleware
 app.use(session(sessionConfig));
 
-// Debug middleware
-app.use((req, res, next) => {
-    console.log('Request:', {
-        method: req.method,
-        path: req.path,
-        origin: req.headers.origin,
-        sessionID: req.sessionID,
-        authenticated: req.session?.authenticated,
-        cookies: req.cookies,
-        secure: req.secure,
-        headers: req.headers,
-        body: req.method === 'POST' ? req.body : undefined
-    });
-    next();
-});
-
 // Attach user to request if authenticated
 app.use(attachUser);
 
 // Serve HTML files for all routes
-const routes = ['', 'about', 'contact', 'events', 'gallery', 'news', 'opportunities', 'event-planning', 'login'];
+const routes = ['', 'about', 'contact', 'events', 'gallery', 'news', 'opportunities', 'event-planning', 'login', 'statistics'];
 routes.forEach(route => {
     app.get(`/${route}`, (req, res) => {
         const filePath = route === '' ? 'index.html' : `${route}.html`;
@@ -94,7 +84,7 @@ routes.forEach(route => {
     });
 });
 
-// API Routes should come after static routes
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/gallery', galleryRoutes);
