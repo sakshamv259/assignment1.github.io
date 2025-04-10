@@ -21,5 +21,14 @@ services:
       - path: /*
         name: Access-Control-Allow-Credentials
         value: "true"
+      - path: /*
+        name: Access-Control-Allow-Origin
+        value: "https://sakshamv259.github.io"
+      - path: /*
+        name: Access-Control-Allow-Methods
+        value: "GET,POST,PUT,DELETE,OPTIONS"
+      - path: /*
+        name: Access-Control-Allow-Headers
+        value: "Content-Type,Authorization,Accept,Origin"
     domains:
       - volunteer-backend-cy21.onrender.com 
