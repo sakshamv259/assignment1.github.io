@@ -76,18 +76,32 @@ const login = async (req, res) => {
         console.log('Login attempt:', req.body);
         const { username, password } = req.body;
 
+        // Validate input
+        if (!username || !password) {
+            return res.status(400).json({
+                success: false,
+                message: 'Username and password are required'
+            });
+        }
+
         // Find user
         const user = await User.findOne({ username });
         if (!user) {
             console.log('User not found:', username);
-            return res.status(401).json({ success: false, message: 'Invalid credentials' });
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Invalid credentials' 
+            });
         }
 
         // Check password
         const isMatch = await user.comparePassword(password);
         if (!isMatch) {
             console.log('Invalid password for user:', username);
-            return res.status(401).json({ success: false, message: 'Invalid credentials' });
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Invalid credentials' 
+            });
         }
 
         // Create session user object (excluding sensitive data)
@@ -103,55 +117,65 @@ const login = async (req, res) => {
         req.session.authenticated = true;
 
         // Save session explicitly
-        req.session.save((err) => {
-            if (err) {
-                console.error('Session save error:', err);
-                return res.status(500).json({ 
-                    success: false, 
-                    message: 'Error during login', 
-                    error: err.message 
-                });
-            }
-
-            // Log successful session creation
-            console.log('Session created successfully:', {
-                sessionID: req.sessionID,
-                user: userForSession,
-                session: req.session
+        await new Promise((resolve, reject) => {
+            req.session.save((err) => {
+                if (err) {
+                    console.error('Session save error:', err);
+                    reject(err);
+                }
+                resolve();
             });
+        });
 
-            // Send success response with user data
-            res.status(200).json({
-                success: true,
-                message: 'Login successful',
-                user: userForSession
-            });
+        // Log successful login
+        console.log('Login successful:', {
+            username: userForSession.username,
+            sessionID: req.sessionID
+        });
+
+        // Send success response
+        res.status(200).json({
+            success: true,
+            message: 'Login successful',
+            user: userForSession
         });
     } catch (error) {
         console.error('Login error:', error);
         res.status(500).json({ 
             success: false, 
-            message: 'Error logging in', 
-            error: error.message 
+            message: 'Internal Server Error',
+            debug: error.message 
         });
     }
 };
 
 const logout = (req, res) => {
-    req.session.destroy((err) => {
-        if (err) {
-            console.error('Logout error:', err);
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Error logging out', 
-                error: err.message 
+    if (req.session) {
+        console.log('Logging out user:', {
+            sessionID: req.sessionID,
+            username: req.session?.user?.username
+        });
+
+        req.session.destroy((err) => {
+            if (err) {
+                console.error('Logout error:', err);
+                return res.status(500).json({ 
+                    success: false, 
+                    message: 'Error logging out', 
+                    error: err.message 
+                });
+            }
+            res.json({ 
+                success: true, 
+                message: 'Logged out successfully' 
             });
-        }
+        });
+    } else {
         res.json({ 
             success: true, 
-            message: 'Logged out successfully' 
+            message: 'Already logged out' 
         });
-    });
+    }
 };
 
 const getCurrentUser = async (req, res) => {
@@ -219,6 +243,7 @@ const verifySession = async (req, res) => {
         // Verify user exists in database
         const user = await User.findById(req.session.user.id);
         if (!user) {
+            // Clear invalid session
             req.session.destroy();
             return res.status(401).json({ 
                 success: false, 
@@ -236,7 +261,7 @@ const verifySession = async (req, res) => {
         res.status(500).json({ 
             success: false, 
             message: 'Error verifying session',
-            error: error.message
+            debug: error.message
         });
     }
 };
