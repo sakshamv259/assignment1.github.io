@@ -1,89 +1,248 @@
-.carousel-item img {
-    height: 400px; /* Maintain the aspect ratio */
-    object-fit: cover; /* Ensure the image covers the space without distortion */
-    margin: 0 auto; /* Center the images */
-  }
+/* Global Styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
 
-  /* Optional: Center the carousel items themselves to ensure consistency */
-  .carousel-inner {
+/* Navbar Styles */
+.navbar {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.navbar-brand {
+    font-weight: bold;
+    color: #fff !important;
+}
+
+.nav-link {
+    color: rgba(255,255,255,0.8) !important;
+    transition: color 0.3s ease;
+}
+
+.nav-link:hover {
+    color: #fff !important;
+}
+
+.nav-link.active {
+    color: #fff !important;
+    font-weight: bold;
+}
+
+/* Carousel Styles */
+.carousel-item {
+    height: 32rem;
+    background-color: #000;
+}
+
+.carousel-item > img {
+    height: 32rem;
+    object-fit: cover;
+    opacity: 0.7;
+}
+
+.carousel-caption {
+    bottom: 3rem;
+    z-index: 10;
+}
+
+/* Card Styles */
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border: none;
+    margin-bottom: 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.card-title {
+    color: #333;
+    font-weight: 600;
+}
+
+/* Button Styles */
+.btn-primary {
+    background-color: #0056b3;
+    border-color: #0056b3;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: #004494;
+    border-color: #004494;
+    transform: translateY(-2px);
+}
+
+/* Form Styles */
+.form-control:focus {
+    border-color: #0056b3;
+    box-shadow: 0 0 0 0.2rem rgba(0,86,179,0.25);
+}
+
+/* Statistics Page */
+.stats-card {
+    transition: transform 0.3s ease;
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+}
+
+/* Gallery Page */
+.gallery-item {
+    margin-bottom: 30px;
+}
+
+.gallery-item img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 10px;
+    transition: transform 0.3s ease;
+}
+
+.gallery-item img:hover {
+    transform: scale(1.05);
+}
+
+/* News Page */
+.news-card {
+    transition: all 0.3s ease;
+}
+
+.news-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Contact Page */
+.contact-info i {
+    width: 24px;
     text-align: center;
-  }
-
-body{
-    background-color:#a2aebb;
-}
-.sign_up{
-  background-color: blue;
-  
+    margin-right: 10px;
+    color: #0056b3;
 }
 
-/* Initial state: hidden */
-#signupModal {
-  display: none; /* Hide by default */
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
-  padding: 20px;
-  z-index: 9999;
+/* Footer Styles */
+footer {
+    margin-top: auto;
+    padding: 20px 0;
+    background-color: #343a40;
+    color: white;
 }
 
-/* When 'active' class is added, show the modal */
-#signupModal.active {
-  display: block; /* Show the modal */
-}
-#calendar{
-  height: 200px !important;
-}
-a{
-  text-decoration: none;
-  color: white;
-}
-.active{
-  color: rgb(7, 57, 104) !important;
-}
-
-
-/* Initially hide the button */
+/* Back to Top Button */
 .back-to-top {
-  z-index: 9999999;
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  padding: 10px 20px;
-  margin-bottom: 50px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  font-size: 16px;
-  cursor: pointer;
-  display: none; /* Hidden by default */
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #0056b3;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 1000;
 }
 
 .back-to-top:hover {
-  background-color: #0056b3;
-}
-/* Ensures all images maintain the same size while keeping aspect ratio */
-.news-image, 
-.gallery-image, 
-.event-image {
-    width: 100%; /* Full width of the container */
-    height: 200px; /* Fixed height for consistency */
-    object-fit: cover; /* Ensures the image covers the entire space without distortion */
-    border-radius: 10px; /* Optional: Adds rounded corners */
+    background-color: #004494;
+    transform: translateY(-3px);
 }
 
-/* Container for gallery images to maintain consistency */
-.gallery-container .col-md-4 {
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .carousel-item {
+        height: 24rem;
+    }
+    
+    .carousel-item > img {
+        height: 24rem;
+    }
+    
+    .container {
+        padding: 15px;
+    }
+    
+    .card {
+        margin-bottom: 15px;
+    }
+    
+    .gallery-item img {
+        height: 150px;
+    }
+}
+
+/* Authentication Forms */
+.auth-form {
+    max-width: 400px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.auth-form h2 {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #333;
+}
+
+/* Alert Messages */
+.alert {
+    margin-bottom: 1rem;
+    border-radius: 5px;
+}
+
+/* Loading Spinner */
+.spinner-border {
+    width: 1rem;
+    height: 1rem;
+    margin-right: 0.5rem;
+}
+
+/* Event Cards */
+.event-card {
+    height: 100%;
     display: flex;
     flex-direction: column;
-    align-items: center;
 }
 
-.gallery-container p {
-    font-size: 14px;
-    text-align: center;
-    margin-top: 5px;
+.event-card .card-body {
+    flex: 1;
 }
+
+.event-date {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* Opportunities Section */
+.opportunity-card {
+    height: 100%;
+}
+
+.opportunity-card .badge {
+    margin-right: 0.5rem;
+}
+
+/* Statistics Charts */
+.chart-container {
+    position: relative;
+    margin: auto;
+    height: 300px;
+    width: 100%;
+} 

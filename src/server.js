@@ -10,6 +10,8 @@ require('dotenv').config();
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const eventRoutes = require('./routes/eventRoutes');
+const opportunityRoutes = require('./routes/opportunityRoutes');
+const statisticsRoutes = require('./routes/statisticsRoutes');
 
 // Initialize express app
 const app = express();
@@ -22,13 +24,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // CORS configuration
 app.use(cors({
-    origin: process.env.NODE_ENV === 'production' 
-        ? ['https://volunteer-backend-cy21.onrender.com', 'http://volunteer-backend-cy21.onrender.com', 'https://sakshamv259.github.io', 'http://sakshamv259.github.io']
-        : ['http://localhost:8080', 'http://127.0.0.1:8080'],
+    origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://volunteer-connect.onrender.com'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin'],
-    exposedHeaders: ['Set-Cookie']
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Body parsing middleware
@@ -37,26 +36,30 @@ app.use(express.urlencoded({ extended: true }));
 
 // Session configuration
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'your_super_secret_key_here',
+    secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: true,
     saveUninitialized: false,
-    name: 'sessionId',
-    store: MongoStore.create({
-        mongoUrl: process.env.MONGODB_URI,
-        ttl: 24 * 60 * 60 // 1 day
-    }),
     cookie: {
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
-        maxAge: 1000 * 60 * 60 * 24, // 24 hours
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        path: '/'
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
     },
-    rolling: true
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGODB_URI,
+        ttl: 24 * 60 * 60 // 24 hours
+    })
 }));
 
-// Attach user to all responses
-app.use(attachUser);
+// Attach user to request if authenticated
+app.use((req, res, next) => {
+    console.log('Session middleware:', {
+        sessionID: req.sessionID,
+        session: req.session,
+        authenticated: req.session?.authenticated,
+        user: req.session?.user
+    });
+    next();
+});
 
 // Debug middleware
 app.use((req, res, next) => {
@@ -74,6 +77,8 @@ app.use((req, res, next) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/opportunities', opportunityRoutes);
+app.use('/api/statistics', statisticsRoutes);
 
 // Serve index.html for the root route
 app.get('/', (req, res) => {

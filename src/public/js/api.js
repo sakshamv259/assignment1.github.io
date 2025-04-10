@@ -1,7 +1,7 @@
 // API Configuration
-const API_BASE_URL = process.env.NODE_ENV === 'production'
-    ? 'https://volunteer-backend-cy21.onrender.com/api'
-    : 'http://localhost:8080/api';
+const API_BASE_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:8080/api'
+    : 'https://volunteer-connect.onrender.com/api';
 
 // Common fetch options for all API calls
 const defaultFetchOptions = {
@@ -16,108 +16,91 @@ const defaultFetchOptions = {
 async function login(username, password) {
     try {
         const response = await fetch(`${API_BASE_URL}/auth/login`, {
-            ...defaultFetchOptions,
             method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
             body: JSON.stringify({ username, password })
         });
 
         const data = await response.json();
-        console.log('Login API response:', data);  // Debug log
+        console.log('Login response:', data);
 
-        if (response.ok && data.success && data.user) {
-            return {
-                success: true,
-                user: data.user
-            };
-        } else {
-            return { 
-                success: false, 
-                message: data.message || 'Login failed. Please check your credentials.'
-            };
+        if (!response.ok) {
+            throw new Error(data.message || 'Login failed');
         }
+
+        return data;
     } catch (error) {
-        console.error('Login API error:', error);
-        return { 
-            success: false, 
-            message: 'An error occurred during login. Please try again.'
-        };
+        console.error('Login error:', error);
+        throw error;
     }
 }
 
 async function register(username, email, password) {
     try {
         const response = await fetch(`${API_BASE_URL}/auth/register`, {
-            ...defaultFetchOptions,
             method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
             body: JSON.stringify({ username, email, password })
         });
 
         const data = await response.json();
+        console.log('Register response:', data);
 
-        if (response.ok) {
-            return { 
-                success: true, 
-                message: 'Registration successful! Please login.'
-            };
-        } else {
-            return { 
-                success: false, 
-                message: data.message || 'Registration failed. Please try again.'
-            };
+        if (!response.ok) {
+            throw new Error(data.message || 'Registration failed');
         }
+
+        return data;
     } catch (error) {
-        console.error('Registration error:', error);
-        return { 
-            success: false, 
-            message: 'An error occurred during registration. Please try again.'
-        };
+        console.error('Register error:', error);
+        throw error;
     }
 }
 
 async function logout() {
     try {
         const response = await fetch(`${API_BASE_URL}/auth/logout`, {
-            ...defaultFetchOptions,
-            method: 'POST'
+            method: 'POST',
+            credentials: 'include'
         });
 
         const data = await response.json();
-        console.log('Logout API response:', data);  // Debug log
-        
-        if (response.ok) {
-            return { 
-                success: true,
-                message: 'Logged out successfully'
-            };
-        } else {
-            return {
-                success: false,
-                message: data.message || 'Logout failed'
-            };
+        console.log('Logout response:', data);
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Logout failed');
         }
+
+        return data;
     } catch (error) {
-        console.error('Logout API error:', error);
-        return { 
-            success: false,
-            message: 'Error during logout'
-        };
+        console.error('Logout error:', error);
+        throw error;
     }
 }
 
-// Check authentication status
-async function isAuthenticated() {
+async function verifySession() {
     try {
         const response = await fetch(`${API_BASE_URL}/auth/verify`, {
-            ...defaultFetchOptions
+            credentials: 'include'
         });
 
         const data = await response.json();
-        console.log('Auth verify API response:', data);  // Debug log
-        
-        return response.ok && data.success;
+        console.log('Verify session response:', data);
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Session verification failed');
+        }
+
+        return data;
     } catch (error) {
-        console.error('Auth verify API error:', error);
-        return false;
+        console.error('Verify session error:', error);
+        throw error;
     }
 }
 
@@ -273,14 +256,16 @@ async function leaveEvent(eventId) {
 }
 
 // Export all functions
-window.login = login;
-window.register = register;
-window.logout = logout;
+window.api = {
+    login,
+    register,
+    logout,
+    verifySession
+};
 window.getEvents = getEvents;
 window.createEvent = createEvent;
 window.updateEvent = updateEvent;
 window.deleteEvent = deleteEvent;
 window.joinEvent = joinEvent;
 window.leaveEvent = leaveEvent;
-window.isAuthenticated = isAuthenticated;
 window.getCurrentUser = getCurrentUser; 
