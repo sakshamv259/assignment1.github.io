@@ -4,40 +4,46 @@ const protectedPages = ['eventPlanning', 'statistics'];
 // Function to update header based on authentication status
 function updateHeader() {
     const currentPath = window.location.pathname;
+    // Remove leading slash and .html extension
     const currentPage = currentPath.split('/').pop().replace('.html', '');
-    console.log('Current page:', currentPage, 'Current path:', currentPath);
+    console.log('Checking page access:', { currentPage, currentPath });
 
     // Check if current page is protected
     if (protectedPages.includes(currentPage)) {
         console.log('Protected page detected:', currentPage);
         verifySession()
             .then(response => {
-                console.log('Verify session response:', response);
+                console.log('Session verification result:', response);
                 if (!response.success) {
+                    console.log('User not authenticated, redirecting to login');
                     // Store the current URL before redirecting
                     sessionStorage.setItem('redirectUrl', currentPath);
                     window.location.href = '/login';
                 } else {
+                    console.log('User authenticated:', response.user);
                     setLoggedInHeader(response.user);
                 }
             })
             .catch(error => {
-                console.error('Auth check failed:', error);
+                console.error('Authentication check failed:', error);
                 sessionStorage.setItem('redirectUrl', currentPath);
                 window.location.href = '/login';
             });
     } else {
+        console.log('Public page detected:', currentPage);
         // For non-protected pages, just check and update the header
         verifySession()
             .then(response => {
                 if (response.success) {
+                    console.log('User is logged in:', response.user);
                     setLoggedInHeader(response.user);
                 } else {
+                    console.log('User not logged in, showing login button');
                     setLoginButton();
                 }
             })
             .catch(error => {
-                console.error('Auth check failed:', error);
+                console.error('Header update failed:', error);
                 setLoginButton();
             });
     }
@@ -95,10 +101,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     await updateHeader();
     
     // Then check if this is a protected page
-    const currentPage = window.location.pathname.replace(/^\//, '').replace('.html', '');
-    console.log('Current page:', currentPage);
+    const currentPage = window.location.pathname.split('/').pop().replace('.html', '');
+    console.log('Current page check:', currentPage);
     
     if (protectedPages.includes(currentPage)) {
-        await checkAuthAndRedirect();
+        console.log('Protected page detected on load:', currentPage);
     }
 }); 

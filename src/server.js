@@ -91,20 +91,24 @@ app.get('/api/health', (req, res) => {
 });
 
 // Protected routes - require authentication
-app.get('/eventPlanning', isAuthenticated, (req, res) => {
+app.get(['/eventPlanning', '/eventPlanning.html'], isAuthenticated, (req, res) => {
+    console.log('Serving eventPlanning.html');
     res.sendFile(path.join(__dirname, 'public', 'eventPlanning.html'));
 });
 
-app.get('/statistics', isAuthenticated, (req, res) => {
+app.get(['/statistics', '/statistics.html'], isAuthenticated, (req, res) => {
+    console.log('Serving statistics.html');
     res.sendFile(path.join(__dirname, 'public', 'statistics.html'));
 });
 
-// Public routes
-app.get('/gallery', (req, res) => {
+// Public routes with logging
+app.get(['/gallery', '/gallery.html'], (req, res) => {
+    console.log('Serving gallery.html');
     res.sendFile(path.join(__dirname, 'public', 'gallery.html'));
 });
 
-app.get('/events', (req, res) => {
+app.get(['/events', '/events.html'], (req, res) => {
+    console.log('Serving events.html');
     res.sendFile(path.join(__dirname, 'public', 'events.html'));
 });
 
