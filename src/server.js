@@ -27,7 +27,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // CORS configuration - must come before other middleware
 app.use(cors({
-    origin: ['http://localhost:8080', 'http://127.0.0.1:8080'],
+    origin: process.env.NODE_ENV === 'production' 
+        ? ['https://volunteer-connect.onrender.com', 'http://volunteer-connect.onrender.com']
+        : ['http://localhost:8080', 'http://127.0.0.1:8080'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin'],
