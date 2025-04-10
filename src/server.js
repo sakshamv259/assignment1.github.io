@@ -23,7 +23,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // CORS configuration
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
-        ? ['https://volunteer-backend-cy21.onrender.com', 'http://volunteer-backend-cy21.onrender.com']
+        ? ['https://volunteer-backend-cy21.onrender.com', 'http://volunteer-backend-cy21.onrender.com', 'https://sakshamv259.github.io', 'http://sakshamv259.github.io']
         : ['http://localhost:8080', 'http://127.0.0.1:8080'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
