@@ -6,44 +6,50 @@ function updateHeader() {
     const currentPath = window.location.pathname;
     // Remove leading slash and .html extension
     const currentPage = currentPath.split('/').pop().replace('.html', '');
-    console.log('Checking page access:', { currentPage, currentPath });
+    console.log('[Header] Checking page access:', { 
+        currentPage, 
+        currentPath,
+        isProtected: protectedPages.includes(currentPage)
+    });
 
     // Check if current page is protected
     if (protectedPages.includes(currentPage)) {
-        console.log('Protected page detected:', currentPage);
+        console.log('[Header] Protected page detected:', currentPage);
         verifySession()
             .then(response => {
-                console.log('Session verification result:', response);
+                console.log('[Auth] Session verification result:', response);
                 if (!response.success) {
-                    console.log('User not authenticated, redirecting to login');
+                    console.log('[Auth] User not authenticated, redirecting to login');
                     // Store the current URL before redirecting
-                    sessionStorage.setItem('redirectUrl', currentPath);
+                    const redirectUrl = currentPath;
+                    console.log('[Auth] Storing redirect URL:', redirectUrl);
+                    sessionStorage.setItem('redirectUrl', redirectUrl);
                     window.location.href = '/login';
                 } else {
-                    console.log('User authenticated:', response.user);
+                    console.log('[Auth] User authenticated:', response.user);
                     setLoggedInHeader(response.user);
                 }
             })
             .catch(error => {
-                console.error('Authentication check failed:', error);
+                console.error('[Auth] Authentication check failed:', error);
                 sessionStorage.setItem('redirectUrl', currentPath);
                 window.location.href = '/login';
             });
     } else {
-        console.log('Public page detected:', currentPage);
+        console.log('[Header] Public page detected:', currentPage);
         // For non-protected pages, just check and update the header
         verifySession()
             .then(response => {
                 if (response.success) {
-                    console.log('User is logged in:', response.user);
+                    console.log('[Auth] User is logged in:', response.user);
                     setLoggedInHeader(response.user);
                 } else {
-                    console.log('User not logged in, showing login button');
+                    console.log('[Auth] User not logged in, showing login button');
                     setLoginButton();
                 }
             })
             .catch(error => {
-                console.error('Header update failed:', error);
+                console.error('[Header] Header update failed:', error);
                 setLoginButton();
             });
     }
@@ -51,8 +57,12 @@ function updateHeader() {
 
 // Helper function to set logged in header
 function setLoggedInHeader(user) {
+    console.log('[Header] Setting logged in header for user:', user.username);
     const authSection = document.querySelector('#auth-section') || document.querySelector('.nav-auth');
-    if (!authSection) return;
+    if (!authSection) {
+        console.error('[Header] Auth section not found in DOM');
+        return;
+    }
 
     authSection.innerHTML = `
         <div class="d-flex align-items-center">
@@ -65,13 +75,18 @@ function setLoggedInHeader(user) {
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', handleLogout);
+        console.log('[Header] Logout button handler attached');
     }
 }
 
 // Helper function to set login button
 function setLoginButton() {
+    console.log('[Header] Setting login button');
     const authSection = document.querySelector('#auth-section') || document.querySelector('.nav-auth');
-    if (!authSection) return;
+    if (!authSection) {
+        console.error('[Header] Auth section not found in DOM');
+        return;
+    }
 
     authSection.innerHTML = `
         <a href="/login" class="btn btn-outline-light btn-sm">Login</a>
@@ -95,16 +110,20 @@ async function handleLogout() {
 
 // Initialize header on page load
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('Page loaded, initializing header...');
+    console.log('[Header] Page loaded, initializing header...');
     
-    // Update header first
-    await updateHeader();
-    
-    // Then check if this is a protected page
-    const currentPage = window.location.pathname.split('/').pop().replace('.html', '');
-    console.log('Current page check:', currentPage);
-    
-    if (protectedPages.includes(currentPage)) {
-        console.log('Protected page detected on load:', currentPage);
+    try {
+        // Update header first
+        await updateHeader();
+        
+        // Then check if this is a protected page
+        const currentPage = window.location.pathname.split('/').pop().replace('.html', '');
+        console.log('[Header] Current page check:', currentPage);
+        
+        if (protectedPages.includes(currentPage)) {
+            console.log('[Header] Protected page detected on load:', currentPage);
+        }
+    } catch (error) {
+        console.error('[Header] Error during initialization:', error);
     }
 }); 

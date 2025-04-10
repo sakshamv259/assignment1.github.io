@@ -20,7 +20,10 @@ connectDB();
 
 // Debug middleware for logging requests
 app.use((req, res, next) => {
-    console.log(`${req.method} ${req.url}`);
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    if (req.session && req.session.user) {
+        console.log(`Authenticated user: ${req.session.user.username}`);
+    }
     next();
 });
 
@@ -92,23 +95,23 @@ app.get('/api/health', (req, res) => {
 
 // Protected routes - require authentication
 app.get(['/eventPlanning', '/eventPlanning.html'], isAuthenticated, (req, res) => {
-    console.log('Serving eventPlanning.html');
+    console.log(`[${new Date().toISOString()}] Serving eventPlanning.html to user:`, req.session.user.username);
     res.sendFile(path.join(__dirname, 'public', 'eventPlanning.html'));
 });
 
 app.get(['/statistics', '/statistics.html'], isAuthenticated, (req, res) => {
-    console.log('Serving statistics.html');
+    console.log(`[${new Date().toISOString()}] Serving statistics.html to user:`, req.session.user.username);
     res.sendFile(path.join(__dirname, 'public', 'statistics.html'));
 });
 
-// Public routes with logging
+// Public routes with enhanced logging
 app.get(['/gallery', '/gallery.html'], (req, res) => {
-    console.log('Serving gallery.html');
+    console.log(`[${new Date().toISOString()}] Serving gallery.html`);
     res.sendFile(path.join(__dirname, 'public', 'gallery.html'));
 });
 
 app.get(['/events', '/events.html'], (req, res) => {
-    console.log('Serving events.html');
+    console.log(`[${new Date().toISOString()}] Serving events.html`);
     res.sendFile(path.join(__dirname, 'public', 'events.html'));
 });
 
@@ -136,9 +139,14 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Error handling middleware
+// Error handling middleware with improved logging
 app.use((err, req, res, next) => {
-    console.error('Error:', err);
+    console.error(`[${new Date().toISOString()}] Error:`, {
+        url: req.url,
+        method: req.method,
+        error: err.message,
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
     res.status(500).json({ 
         success: false, 
         message: 'Internal Server Error',
