@@ -1,5 +1,5 @@
 // API Configuration
-const API_BASE_URL = window.location.origin + '/api';
+const API_BASE_URL = 'http://localhost:8080/api';
 
 // Common fetch options for all API calls
 const defaultFetchOptions = {
@@ -13,7 +13,7 @@ const defaultFetchOptions = {
 // Authentication functions
 async function login(username, password) {
     try {
-        console.log('Attempting login with:', { username });
+        console.log('Login attempt:', { username, API_BASE_URL });
         const response = await fetch(`${API_BASE_URL}/auth/login`, {
             ...defaultFetchOptions,
             method: 'POST',
@@ -82,12 +82,14 @@ async function logout() {
 
 async function verifySession() {
     try {
+        console.log('Verifying session...');
         const response = await fetch(`${API_BASE_URL}/auth/verify`, {
             ...defaultFetchOptions
         });
 
+        console.log('Verify response status:', response.status);
         const data = await response.json();
-        console.log('Verify session response:', data);
+        console.log('Verify response data:', data);
 
         if (!response.ok) {
             throw new Error(data.message || 'Session verification failed');

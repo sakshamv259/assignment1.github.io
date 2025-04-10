@@ -21,15 +21,15 @@ connectDB();
 app.use(express.static(path.join(__dirname, 'public')));
 
 // CORS configuration
-app.use(cors({
-    origin: process.env.NODE_ENV === 'production' 
-        ? ['https://volunteer-connect.onrender.com', 'https://volunteer-connect.onrender.com/']
-        : ['http://localhost:8080', 'http://127.0.0.1:8080', 'http://localhost:3000'],
+const corsOptions = {
+    origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5500'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
     exposedHeaders: ['Set-Cookie']
-}));
+};
+
+app.use(cors(corsOptions));
 
 // Body parsing middleware
 app.use(express.json());
@@ -39,32 +39,20 @@ app.use(express.urlencoded({ extended: true }));
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: true,
-    saveUninitialized: true,
+    saveUninitialized: false,
     name: 'sessionId',
+    rolling: true,
     cookie: {
-        secure: process.env.NODE_ENV === 'production',
+        secure: false, // Set to true in production with HTTPS
         httpOnly: true,
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        path: '/',
-        domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
     },
     store: MongoStore.create({
         mongoUrl: process.env.MONGODB_URI,
         ttl: 24 * 60 * 60 // 24 hours
     })
 }));
-
-// Attach user to request if authenticated
-app.use((req, res, next) => {
-    console.log('Session middleware:', {
-        sessionID: req.sessionID,
-        session: req.session,
-        authenticated: req.session?.authenticated,
-        user: req.session?.user
-    });
-    next();
-});
 
 // Debug middleware
 app.use((req, res, next) => {
@@ -78,6 +66,9 @@ app.use((req, res, next) => {
     });
     next();
 });
+
+// Attach user to request if authenticated
+app.use(attachUser);
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -98,16 +89,20 @@ routes.forEach(route => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-    console.error('Error:', err);
+    console.error(err.stack);
     res.status(500).json({ 
-        message: 'Something went wrong!', 
-        error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error' 
+        success: false, 
+        message: 'Internal Server Error',
+        error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
 });
 
 // Handle 404
 app.use((req, res) => {
-    res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+    res.status(404).json({ 
+        success: false, 
+        message: 'Route not found' 
+    });
 });
 
 // Start server
