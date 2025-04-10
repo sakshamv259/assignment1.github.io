@@ -3,7 +3,7 @@ const cors = require('cors');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const connectDB = require('./config/database');
-const { attachUser } = require('./middleware/auth');
+const { attachUser, isAuthenticated } = require('./middleware/auth');
 const path = require('path');
 require('dotenv').config();
 
@@ -29,7 +29,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // CORS configuration for API endpoints
 const corsOptions = {
-    origin: true,
+    origin: ['https://volunteer-backend-cy21.onrender.com', 'http://localhost:3000'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin'],
@@ -54,8 +54,8 @@ const sessionConfig = {
     proxy: true,
     cookie: {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        secure: true, // Always true for Render deployment
+        sameSite: 'none', // Required for cross-origin cookies
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
     },
     store: MongoStore.create({
@@ -90,25 +90,34 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// Serve HTML files for all routes
-const routes = {
-    '': 'index.html',
-    'about': 'about.html',
-    'contact': 'contact.html',
-    'events': 'events.html',
-    'gallery': 'gallery.html',
-    'news': 'news.html',
-    'opportunities': 'opportunities.html',
-    'event-planning': 'event-planning.html',
-    'login': 'login.html',
-    'statistics': 'statistics.html'
-};
+// Protected routes - require authentication
+app.get('/event-planning', isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'event-planning.html'));
+});
 
-// Route handler for all pages
-Object.entries(routes).forEach(([route, file]) => {
-    app.get(`/${route}`, (req, res) => {
-        res.sendFile(path.join(__dirname, 'public', file));
-    });
+app.get('/statistics', isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'statistics.html'));
+});
+
+// Public routes
+app.get('/gallery', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'gallery.html'));
+});
+
+app.get('/about', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'about.html'));
+});
+
+app.get('/contact', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'contact.html'));
+});
+
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Error handling middleware

@@ -86,13 +86,17 @@ async function checkAuthAndRedirect() {
         console.log('Protected page auth check:', authenticated);
         
         if (!authenticated) {
-            window.location.href = 'login.html';
+            const currentPath = window.location.pathname;
+            // Store the attempted URL to redirect back after login
+            sessionStorage.setItem('redirectUrl', currentPath);
+            window.location.href = '/login';
             return false;
         }
         return true;
     } catch (error) {
         console.error('Auth check error:', error);
-        window.location.href = 'login.html';
+        sessionStorage.setItem('redirectUrl', window.location.pathname);
+        window.location.href = '/login';
         return false;
     }
 }
@@ -105,8 +109,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     await updateHeader();
     
     // Then check if this is a protected page
-    const protectedPages = ['event-planning.html', 'statistics.html'];
-    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+    const protectedPages = ['event-planning', 'statistics'];
+    const currentPage = window.location.pathname.replace(/^\//, '').replace('.html', '');
     console.log('Current page:', currentPage);
     
     if (protectedPages.includes(currentPage)) {
