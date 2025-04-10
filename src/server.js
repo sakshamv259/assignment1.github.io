@@ -10,6 +10,7 @@ require('dotenv').config();
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const eventRoutes = require('./routes/eventRoutes');
+const galleryRoutes = require('./routes/galleryRoutes');
 
 // Initialize express app
 const app = express();
@@ -89,6 +90,16 @@ app.use(attachUser);
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/gallery', galleryRoutes);
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+    res.json({ 
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+    });
+});
 
 // Serve index.html for the root route
 app.get('/', (req, res) => {
