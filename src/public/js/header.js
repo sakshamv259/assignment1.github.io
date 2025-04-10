@@ -72,8 +72,8 @@ async function handleLogout() {
     try {
         const result = await window.api.logout();
         if (result.success) {
-            // Redirect to login page
-            window.location.href = 'login.html';
+            // Redirect to login page after logout
+            window.location.href = '/login';
         } else {
             console.error('Logout failed:', result.message);
         }
@@ -83,7 +83,7 @@ async function handleLogout() {
 }
 
 // Protected pages that require authentication
-const protectedPages = ['event-planning', 'eventplanning', 'statistics'];
+const protectedPages = ['eventplanning', 'statistics'];
 
 // Initialize header on page load
 document.addEventListener('DOMContentLoaded', async () => {

@@ -91,8 +91,8 @@ app.get('/api/health', (req, res) => {
 });
 
 // Protected routes - require authentication
-app.get(['/event-planning', '/eventplanning'], isAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'event-planning.html'));
+app.get(['/eventplanning', '/event-planning'], isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'eventplanning.html'));
 });
 
 app.get('/statistics', isAuthenticated, (req, res) => {
