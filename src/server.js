@@ -28,7 +28,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // CORS configuration - must come before other middleware
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
-        ? ['https://volunteer-connect.onrender.com', 'http://volunteer-connect.onrender.com']
+        ? ['https://volunteer-backend-cy21.onrender.com', 'http://volunteer-backend-cy21.onrender.com']
         : ['http://localhost:8080', 'http://127.0.0.1:8080'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -55,7 +55,8 @@ app.use(session({
         httpOnly: true,
         maxAge: 1000 * 60 * 60 * 24, // 24 hours
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        path: '/'
+        path: '/',
+        domain: process.env.NODE_ENV === 'production' ? '.volunteer-backend-cy21.onrender.com' : undefined
     },
     rolling: true
 }));
