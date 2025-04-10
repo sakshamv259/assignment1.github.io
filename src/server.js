@@ -10,7 +10,6 @@ require('dotenv').config();
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const eventRoutes = require('./routes/eventRoutes');
-const viewRoutes = require('./routes/viewRoutes');
 
 // Initialize express app
 const app = express();
@@ -18,14 +17,10 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
-// View engine setup
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-
-// Static files - before any middleware
+// Static files - serve before any middleware
 app.use(express.static(path.join(__dirname, 'public')));
 
-// CORS configuration - must come before other middleware
+// CORS configuration
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
         ? ['https://volunteer-backend-cy21.onrender.com', 'http://volunteer-backend-cy21.onrender.com']
@@ -55,8 +50,7 @@ app.use(session({
         httpOnly: true,
         maxAge: 1000 * 60 * 60 * 24, // 24 hours
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        path: '/',
-        domain: process.env.NODE_ENV === 'production' ? '.volunteer-backend-cy21.onrender.com' : undefined
+        path: '/'
     },
     rolling: true
 }));
@@ -77,36 +71,35 @@ app.use((req, res, next) => {
     next();
 });
 
-// Routes
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
-app.use('/', viewRoutes); // EJS rendered routes should come last
+
+// Serve index.html for the root route
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Serve HTML files for other routes
+const routes = ['about', 'contact', 'events', 'gallery', 'news', 'opportunities', 'event-planning', 'login'];
+routes.forEach(route => {
+    app.get(`/${route}`, (req, res) => {
+        res.sendFile(path.join(__dirname, 'public', `${route}.html`));
+    });
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error('Error:', err);
-    if (req.accepts('html')) {
-        // Render error page for browser requests
-        res.status(500).render('error', { 
-            message: 'Something went wrong!',
-            error: process.env.NODE_ENV === 'development' ? err : {}
-        });
-    } else {
-        // Send JSON response for API requests
-        res.status(500).json({ 
-            message: 'Something went wrong!', 
-            error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error' 
-        });
-    }
+    res.status(500).json({ 
+        message: 'Something went wrong!', 
+        error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error' 
+    });
 });
 
 // Handle 404
 app.use((req, res) => {
-    if (req.accepts('html')) {
-        res.status(404).render('404');
-    } else {
-        res.status(404).json({ message: 'Route not found' });
-    }
+    res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
 });
 
 // Start server
