@@ -1,11 +1,11 @@
 // Header management
 async function updateHeader() {
     const currentPath = window.location.pathname;
-    const currentPage = currentPath.split('/').pop().replace('.html', '').toLowerCase() || 'index';
+    const currentPage = currentPath.split('/').pop().replace('.html', '') || 'index';
     console.log('Current page:', currentPage, 'Current path:', currentPath);
 
-    // Check if current page is protected
-    if (protectedPages.map(p => p.toLowerCase()).includes(currentPage)) {
+    // Check if current page is protected (case-sensitive check)
+    if (protectedPages.includes(currentPage)) {
         verifySession()
             .then(response => {
                 if (!response.success) {
