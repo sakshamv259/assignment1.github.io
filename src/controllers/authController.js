@@ -73,7 +73,12 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
     try {
-        console.log('Login attempt:', req.body);
+        console.log('[Auth] Login attempt:', {
+            body: req.body,
+            headers: req.headers,
+            ip: req.ip
+        });
+
         const { username, password } = req.body;
 
         // Validate input
@@ -87,7 +92,7 @@ const login = async (req, res) => {
         // Find user
         const user = await User.findOne({ username });
         if (!user) {
-            console.log('User not found:', username);
+            console.log('[Auth] User not found:', username);
             return res.status(401).json({ 
                 success: false, 
                 message: 'Invalid credentials' 
@@ -97,7 +102,7 @@ const login = async (req, res) => {
         // Check password
         const isMatch = await user.comparePassword(password);
         if (!isMatch) {
-            console.log('Invalid password for user:', username);
+            console.log('[Auth] Invalid password for user:', username);
             return res.status(401).json({ 
                 success: false, 
                 message: 'Invalid credentials' 
@@ -120,16 +125,25 @@ const login = async (req, res) => {
         try {
             await new Promise((resolve, reject) => {
                 req.session.save((err) => {
-                    if (err) reject(err);
-                    else resolve();
+                    if (err) {
+                        console.error('[Auth] Session save error:', err);
+                        reject(err);
+                    } else {
+                        resolve();
+                    }
                 });
             });
 
             // Log successful login
-            console.log('Login successful:', {
+            console.log('[Auth] Login successful:', {
                 username: userForSession.username,
-                sessionID: req.sessionID
+                sessionID: req.sessionID,
+                cookie: req.session.cookie
             });
+
+            // Set CORS headers for Render deployment
+            res.header('Access-Control-Allow-Credentials', 'true');
+            res.header('Access-Control-Allow-Origin', 'https://volunteer-backend-cy21.onrender.com');
 
             // Send success response
             res.status(200).json({
@@ -138,18 +152,18 @@ const login = async (req, res) => {
                 user: userForSession
             });
         } catch (sessionError) {
-            console.error('Session save error:', sessionError);
+            console.error('[Auth] Session save error:', sessionError);
             return res.status(500).json({
                 success: false,
-                message: 'Error creating session',
+                message: 'Error creating session. Please try again.',
                 error: sessionError.message
             });
         }
     } catch (error) {
-        console.error('Login error:', error);
+        console.error('[Auth] Login error:', error);
         res.status(500).json({ 
             success: false, 
-            message: 'Internal Server Error',
+            message: 'Internal Server Error. Please try again later.',
             error: error.message 
         });
     }

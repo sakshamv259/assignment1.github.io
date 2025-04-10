@@ -1,13 +1,5 @@
 // API Configuration
-const API_BASE_URL = (() => {
-    const hostname = window.location.hostname;
-    if (hostname === 'sakshamv259.github.io' || hostname === 'assignment1-github-io.vercel.app') {
-        return 'https://volunteer-backend-cy21.onrender.com/api';
-    } else if (hostname === 'volunteer-backend-cy21.onrender.com') {
-        return 'https://volunteer-backend-cy21.onrender.com/api';
-    }
-    return 'http://localhost:8080/api';
-})();
+const API_BASE_URL = 'https://volunteer-backend-cy21.onrender.com/api';
 
 console.log('[API] Using base URL:', API_BASE_URL);
 
@@ -20,7 +12,8 @@ const defaultFetchOptions = {
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
-    }
+    },
+    mode: 'cors' // Explicitly set CORS mode
 };
 
 // Helper function for logging
@@ -41,7 +34,12 @@ async function login(username, password) {
         });
 
         const data = await response.json();
-        console.log('[API] Login response status:', response.status);
+        console.log('[API] Login response:', {
+            status: response.status,
+            statusText: response.statusText,
+            headers: Object.fromEntries(response.headers.entries()),
+            data
+        });
 
         if (!response.ok) {
             console.error('[API] Login failed:', data.message);
