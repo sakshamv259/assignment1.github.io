@@ -1,7 +1,8 @@
 // Header management
 async function updateHeader() {
-    const currentPage = window.location.pathname.split('/').pop().replace('.html', '') || 'index';
-    console.log('Current page:', currentPage);
+    const currentPath = window.location.pathname;
+    const currentPage = currentPath.split('/').pop().replace('.html', '') || 'index';
+    console.log('Current page:', currentPage, 'Current path:', currentPath);
 
     // Check if current page is protected
     if (protectedPages.includes(currentPage)) {
@@ -9,7 +10,7 @@ async function updateHeader() {
             .then(response => {
                 if (!response.success) {
                     // Store the current URL before redirecting
-                    sessionStorage.setItem('redirectUrl', window.location.pathname);
+                    sessionStorage.setItem('redirectUrl', currentPath);
                     window.location.href = '/login';
                 } else {
                     setLoggedInHeader(response.user);
@@ -17,7 +18,7 @@ async function updateHeader() {
             })
             .catch(error => {
                 console.error('Auth check failed:', error);
-                sessionStorage.setItem('redirectUrl', window.location.pathname);
+                sessionStorage.setItem('redirectUrl', currentPath);
                 window.location.href = '/login';
             });
     } else {
@@ -38,12 +39,13 @@ async function updateHeader() {
 }
 
 // Helper function to set logged in header
-function setLoggedInHeader(authSection, username) {
+function setLoggedInHeader(user) {
+    const authSection = document.querySelector('#auth-section') || document.querySelector('.nav-auth');
     if (!authSection) return;
 
     authSection.innerHTML = `
         <div class="d-flex align-items-center">
-            <span class="navbar-text text-light me-3">Welcome, ${username}</span>
+            <span class="navbar-text text-light me-3">Welcome, ${user.username}</span>
             <button class="btn btn-outline-light btn-sm" id="logoutBtn">Logout</button>
         </div>
     `;
@@ -56,11 +58,12 @@ function setLoggedInHeader(authSection, username) {
 }
 
 // Helper function to set login button
-function setLoginButton(authSection) {
+function setLoginButton() {
+    const authSection = document.querySelector('#auth-section') || document.querySelector('.nav-auth');
     if (!authSection) return;
 
     authSection.innerHTML = `
-        <a href="login.html" class="btn btn-outline-light btn-sm">Login</a>
+        <a href="/login" class="btn btn-outline-light btn-sm">Login</a>
     `;
 }
 
@@ -80,7 +83,7 @@ async function handleLogout() {
 }
 
 // Protected pages that require authentication
-const protectedPages = ['event-planning', 'statistics'];
+const protectedPages = ['event-planning', 'eventplanning', 'statistics'];
 
 // Initialize header on page load
 document.addEventListener('DOMContentLoaded', async () => {
