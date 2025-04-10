@@ -76,9 +76,9 @@ app.use(session(sessionConfig));
 app.use(attachUser);
 
 // API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/events', eventRoutes);
-app.use('/api/gallery', galleryRoutes);
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/events', require('./routes/eventRoutes'));
+app.use('/api/gallery', require('./routes/galleryRoutes'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -102,6 +102,18 @@ app.get('/statistics', isAuthenticated, (req, res) => {
 // Public routes
 app.get('/gallery', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'gallery.html'));
+});
+
+app.get('/events', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'events.html'));
+});
+
+app.get('/news', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'news.html'));
+});
+
+app.get('/opportunities', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'opportunities.html'));
 });
 
 app.get('/about', (req, res) => {
@@ -130,12 +142,9 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Handle 404
+// Handle 404 - Keep this as the last route
 app.use((req, res) => {
-    res.status(404).json({ 
-        success: false, 
-        message: 'Route not found' 
-    });
+    res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
 });
 
 // Start server

@@ -1,5 +1,9 @@
 // API Configuration
-const API_BASE_URL = '/api';
+const API_BASE_URL = window.location.hostname === 'volunteer-backend-cy21.onrender.com' 
+    ? 'https://volunteer-backend-cy21.onrender.com/api'
+    : 'http://localhost:8080/api';
+
+console.log('API Base URL:', API_BASE_URL);
 
 // Debug flag
 const DEBUG = true;
@@ -25,31 +29,20 @@ async function login(username, password) {
     try {
         log('Attempting login...', { username });
         const response = await fetch(`${API_BASE_URL}/auth/login`, {
-            ...defaultFetchOptions,
             method: 'POST',
-            body: JSON.stringify({ username, password })
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username, password }),
+            credentials: 'include'
         });
-
+        
         const data = await response.json();
         log('Login response:', data);
-
-        if (response.ok && data.success) {
-            return {
-                success: true,
-                user: data.user
-            };
-        } else {
-            return { 
-                success: false, 
-                message: data.message || 'Login failed. Please check your credentials.'
-            };
-        }
+        return data;
     } catch (error) {
         log('Login error:', error);
-        return { 
-            success: false, 
-            message: 'An error occurred during login. Please try again.'
-        };
+        return { success: false, message: 'Login failed' };
     }
 }
 
@@ -103,25 +96,17 @@ async function logout() {
 
 async function verifySession() {
     try {
-        log('Verifying session...');
+        log('Verifying session with:', `${API_BASE_URL}/auth/verify`);
         const response = await fetch(`${API_BASE_URL}/auth/verify`, {
-            ...defaultFetchOptions,
-            method: 'GET'
+            credentials: 'include'
         });
-
+        
         const data = await response.json();
-        log('Session verification response:', data);
-
-        return {
-            success: response.ok && data.success,
-            user: data.user
-        };
+        log('Verify session response:', data);
+        return data;
     } catch (error) {
-        log('Session verification error:', error);
-        return {
-            success: false,
-            message: 'Failed to verify session.'
-        };
+        log('Verify session error:', error);
+        return { success: false, message: 'Session verification failed' };
     }
 }
 

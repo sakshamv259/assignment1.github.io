@@ -1,38 +1,39 @@
 // Header management
 async function updateHeader() {
-    try {
-        // First check if authenticated
-        const response = await window.api.verifySession();
-        const authenticated = response.success;
-        console.log('Authentication status:', authenticated, response);
+    const currentPage = window.location.pathname.split('/').pop().replace('.html', '') || 'index';
+    console.log('Current page:', currentPage);
 
-        // Try to find auth section using different possible selectors
-        const authSection = document.querySelector('#auth-section') || document.querySelector('.nav-auth');
-        if (!authSection) {
-            console.error('Auth section not found');
-            return;
-        }
-
-        if (!authenticated) {
-            console.log('User is not authenticated');
-            setLoginButton(authSection);
-            return;
-        }
-
-        // User is authenticated and we have the user data from verifySession
-        if (response.user && response.user.username) {
-            console.log('Setting logged in user header:', response.user.username);
-            setLoggedInHeader(authSection, response.user.username);
-        } else {
-            console.log('No valid user data, showing login button');
-            setLoginButton(authSection);
-        }
-    } catch (error) {
-        console.error('Error updating header:', error);
-        const authSection = document.querySelector('#auth-section') || document.querySelector('.nav-auth');
-        if (authSection) {
-            setLoginButton(authSection);
-        }
+    // Check if current page is protected
+    if (protectedPages.includes(currentPage)) {
+        verifySession()
+            .then(response => {
+                if (!response.success) {
+                    // Store the current URL before redirecting
+                    sessionStorage.setItem('redirectUrl', window.location.pathname);
+                    window.location.href = '/login';
+                } else {
+                    setLoggedInHeader(response.user);
+                }
+            })
+            .catch(error => {
+                console.error('Auth check failed:', error);
+                sessionStorage.setItem('redirectUrl', window.location.pathname);
+                window.location.href = '/login';
+            });
+    } else {
+        // For non-protected pages, just check and update the header
+        verifySession()
+            .then(response => {
+                if (response.success) {
+                    setLoggedInHeader(response.user);
+                } else {
+                    setLoginButton();
+                }
+            })
+            .catch(error => {
+                console.error('Auth check failed:', error);
+                setLoginButton();
+            });
     }
 }
 
@@ -78,28 +79,8 @@ async function handleLogout() {
     }
 }
 
-// Check authentication on protected pages
-async function checkAuthAndRedirect() {
-    try {
-        const response = await window.api.verifySession();
-        const authenticated = response.success;
-        console.log('Protected page auth check:', authenticated);
-        
-        if (!authenticated) {
-            const currentPath = window.location.pathname;
-            // Store the attempted URL to redirect back after login
-            sessionStorage.setItem('redirectUrl', currentPath);
-            window.location.href = '/login';
-            return false;
-        }
-        return true;
-    } catch (error) {
-        console.error('Auth check error:', error);
-        sessionStorage.setItem('redirectUrl', window.location.pathname);
-        window.location.href = '/login';
-        return false;
-    }
-}
+// Protected pages that require authentication
+const protectedPages = ['event-planning', 'statistics'];
 
 // Initialize header on page load
 document.addEventListener('DOMContentLoaded', async () => {
@@ -109,7 +90,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     await updateHeader();
     
     // Then check if this is a protected page
-    const protectedPages = ['event-planning', 'statistics'];
     const currentPage = window.location.pathname.replace(/^\//, '').replace('.html', '');
     console.log('Current page:', currentPage);
     
