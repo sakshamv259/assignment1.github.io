@@ -19,7 +19,6 @@ async function updateHeader() {
         if (response.success && response.user) {
             console.log('[Auth] User is authenticated:', response.user);
             setLoggedInHeader(response.user);
-            // User is authenticated, no need for any redirects
             return;
         }
 
@@ -27,9 +26,9 @@ async function updateHeader() {
         setLoginButton();
             
         // For protected pages, let the server handle the redirect
+        // The server will store the return URL in the session
         if (protectedPages.includes(currentPage)) {
-            console.log('[Auth] Protected page access attempt');
-            // The server's authenticateHtmlRoute middleware will handle the redirect
+            console.log('[Auth] Protected page access attempt - server will handle redirect');
         }
     } catch (error) {
         console.error('[Auth] Authentication check failed:', error);
@@ -53,7 +52,6 @@ function setLoggedInHeader(user) {
         </div>
     `;
 
-    // Add logout handler
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', handleLogout);
@@ -70,8 +68,11 @@ function setLoginButton() {
         return;
     }
 
+    const currentPath = window.location.pathname;
+    const isProtectedPage = protectedPages.includes(currentPath.split('/').pop().replace('.html', ''));
+    
     authSection.innerHTML = `
-        <a href="/login" class="btn btn-outline-light btn-sm">Login</a>
+        <a href="/login${isProtectedPage ? '?returnTo=' + encodeURIComponent(currentPath) : ''}" class="btn btn-outline-light btn-sm">Login</a>
     `;
 }
 
@@ -80,6 +81,7 @@ async function handleLogout() {
     try {
         const result = await window.api.logout();
         if (result.success) {
+            console.log('[Auth] Logout successful, redirecting to login page');
             window.location.href = '/login';
         } else {
             console.error('[Auth] Logout failed:', result.message);

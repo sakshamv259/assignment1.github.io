@@ -75,7 +75,11 @@ app.use(attachUser);
 // CORS configuration for API endpoints
 const corsOptions = {
     origin: process.env.NODE_ENV === 'production' 
-        ? ['https://volunteer-backend-cy21.onrender.com']
+        ? [
+            'https://volunteer-backend-cy21.onrender.com',
+            'https://sakshamv259.github.io',
+            'https://assignment1-github-io.vercel.app'
+        ]
         : ['http://localhost:3000', 'http://localhost:8080'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -111,13 +115,23 @@ const authenticateHtmlRoute = (req, res, next) => {
     console.log('[Auth Route] Checking authentication for HTML route:', {
         path: req.path,
         hasSession: !!req.session,
-        hasUser: !!(req.session && req.session.user)
+        hasUser: !!(req.session && req.session.user),
+        referrer: req.get('Referrer')
     });
 
     if (!req.session || !req.session.user) {
-        console.log('[Auth Route] Not authenticated, redirecting to login');
+        console.log('[Auth Route] Not authenticated, storing return URL and redirecting to login');
+        // Store the requested URL for post-login redirect
+        req.session.returnTo = req.originalUrl || req.url;
         return res.redirect('/login');
     }
+
+    // Clear the returnTo if we're successfully accessing a protected route
+    if (req.session.returnTo) {
+        delete req.session.returnTo;
+    }
+
+    console.log('[Auth Route] Authentication successful, proceeding to route');
     next();
 };
 
@@ -159,7 +173,22 @@ app.get('/contact', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'contact.html'));
 });
 
-app.get('/login', (req, res) => {
+app.get('/login', (req, res, next) => {
+    // If user is already authenticated, redirect to returnTo or home
+    if (req.session && req.session.user) {
+        console.log('[Login Route] User already authenticated, redirecting...');
+        const returnTo = req.query.returnTo || req.session.returnTo || '/';
+        delete req.session.returnTo; // Clean up
+        return res.redirect(returnTo);
+    }
+
+    // Store returnTo from query parameter into session if present
+    if (req.query.returnTo) {
+        console.log('[Login Route] Storing returnTo URL:', req.query.returnTo);
+        req.session.returnTo = req.query.returnTo;
+    }
+
+    console.log('[Login Route] Serving login page');
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
