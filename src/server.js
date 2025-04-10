@@ -99,7 +99,7 @@ app.get('/statistics', isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'statistics.html'));
 });
 
-// Public routes with explicit paths
+// Public routes
 app.get('/gallery', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'gallery.html'));
 });

@@ -1,13 +1,18 @@
-// Header management
-async function updateHeader() {
+// Protected pages that require authentication
+const protectedPages = ['eventPlanning', 'statistics'];
+
+// Function to update header based on authentication status
+function updateHeader() {
     const currentPath = window.location.pathname;
-    const currentPage = currentPath.split('/').pop().replace('.html', '') || 'index';
+    const currentPage = currentPath.split('/').pop().replace('.html', '');
     console.log('Current page:', currentPage, 'Current path:', currentPath);
 
-    // Check if current page is protected (case-sensitive check)
+    // Check if current page is protected
     if (protectedPages.includes(currentPage)) {
+        console.log('Protected page detected:', currentPage);
         verifySession()
             .then(response => {
+                console.log('Verify session response:', response);
                 if (!response.success) {
                     // Store the current URL before redirecting
                     sessionStorage.setItem('redirectUrl', currentPath);
@@ -81,9 +86,6 @@ async function handleLogout() {
         console.error('Logout error:', error);
     }
 }
-
-// Protected pages that require authentication
-const protectedPages = ['eventPlanning', 'statistics'];
 
 // Initialize header on page load
 document.addEventListener('DOMContentLoaded', async () => {
