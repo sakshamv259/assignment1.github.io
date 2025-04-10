@@ -42,16 +42,21 @@ const sessionConfig = {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        maxAge: 24 * 60 * 60 * 1000
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
     },
     store: MongoStore.create({
         mongoUrl: process.env.MONGODB_URI,
-        ttl: 24 * 60 * 60,
+        ttl: 24 * 60 * 60, // 24 hours
         autoRemove: 'native',
         touchAfter: 24 * 3600,
         crypto: {
             secret: process.env.SESSION_SECRET || 'your-secret-key'
-        }
+        },
+        // Add these options for better session store handling
+        collectionName: 'sessions',
+        autoRemoveInterval: 10, // Check expired sessions every 10 minutes
+        stringify: false, // Don't stringify session data
+        touchAfter: 24 * 3600 // Only update session if data changes
     })
 };
 
@@ -199,15 +204,27 @@ app.get('/', (req, res) => {
 // API endpoint to check authentication status
 app.get('/api/auth/check', (req, res) => {
     const isAuthenticated = !!(req.session && req.session.user);
+    const currentUrl = req.get('Referer') || req.query.currentUrl;
+    
     console.log('[Auth Check] Status:', { 
         isAuthenticated, 
         sessionID: req.sessionID,
-        user: isAuthenticated ? req.session.user.username : null
+        user: isAuthenticated ? req.session.user.username : null,
+        currentUrl,
+        returnTo: req.session?.returnTo
     });
+
+    // If there's a current URL and user is not authenticated, store it for later redirect
+    if (!isAuthenticated && currentUrl && !currentUrl.includes('/login')) {
+        req.session.returnTo = currentUrl;
+        console.log('[Auth Check] Stored returnTo URL:', currentUrl);
+    }
+
     res.json({ 
         success: true,
         isAuthenticated,
-        user: isAuthenticated ? req.session.user : null
+        user: isAuthenticated ? req.session.user : null,
+        returnTo: isAuthenticated ? (req.session.returnTo || '/') : undefined
     });
 });
 
