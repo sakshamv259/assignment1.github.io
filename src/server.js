@@ -29,7 +29,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // CORS configuration for API endpoints
 const corsOptions = {
-    origin: true, // Allow all origins since we're serving frontend from same origin
+    origin: true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin'],
@@ -60,7 +60,7 @@ const sessionConfig = {
     },
     store: MongoStore.create({
         mongoUrl: process.env.MONGODB_URI,
-        ttl: 24 * 60 * 60, // 24 hours
+        ttl: 24 * 60 * 60,
         autoRemove: 'native',
         touchAfter: 24 * 3600,
         crypto: {
@@ -75,15 +75,6 @@ app.use(session(sessionConfig));
 // Attach user to request if authenticated
 app.use(attachUser);
 
-// Serve HTML files for all routes
-const routes = ['', 'about', 'contact', 'events', 'gallery', 'news', 'opportunities', 'event-planning', 'login', 'statistics'];
-routes.forEach(route => {
-    app.get(`/${route}`, (req, res) => {
-        const filePath = route === '' ? 'index.html' : `${route}.html`;
-        res.sendFile(path.join(__dirname, 'public', filePath));
-    });
-});
-
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
@@ -96,6 +87,27 @@ app.get('/api/health', (req, res) => {
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
         env: process.env.NODE_ENV
+    });
+});
+
+// Serve HTML files for all routes
+const routes = {
+    '': 'index.html',
+    'about': 'about.html',
+    'contact': 'contact.html',
+    'events': 'events.html',
+    'gallery': 'gallery.html',
+    'news': 'news.html',
+    'opportunities': 'opportunities.html',
+    'event-planning': 'event-planning.html',
+    'login': 'login.html',
+    'statistics': 'statistics.html'
+};
+
+// Route handler for all pages
+Object.entries(routes).forEach(([route, file]) => {
+    app.get(`/${route}`, (req, res) => {
+        res.sendFile(path.join(__dirname, 'public', file));
     });
 });
 
