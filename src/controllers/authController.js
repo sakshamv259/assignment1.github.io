@@ -76,7 +76,8 @@ const login = async (req, res) => {
         console.log('[Auth] Login attempt:', {
             body: req.body,
             headers: req.headers,
-            ip: req.ip
+            ip: req.ip,
+            origin: req.get('origin')
         });
 
         const { username, password } = req.body;
@@ -120,6 +121,12 @@ const login = async (req, res) => {
         // Set session data
         req.session.user = userForSession;
         req.session.authenticated = true;
+        req.session.createdAt = new Date();
+
+        // Set secure cookie options for Render deployment
+        req.session.cookie.secure = true;
+        req.session.cookie.sameSite = 'none';
+        req.session.cookie.domain = 'volunteer-backend-cy21.onrender.com';
 
         // Save session explicitly with proper error handling
         try {
@@ -138,18 +145,22 @@ const login = async (req, res) => {
             console.log('[Auth] Login successful:', {
                 username: userForSession.username,
                 sessionID: req.sessionID,
-                cookie: req.session.cookie
+                cookie: req.session.cookie,
+                headers: res.getHeaders()
             });
 
             // Set CORS headers for Render deployment
             res.header('Access-Control-Allow-Credentials', 'true');
             res.header('Access-Control-Allow-Origin', 'https://volunteer-backend-cy21.onrender.com');
+            res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
+            res.header('Access-Control-Allow-Headers', 'Content-Type, Accept, X-Session-ID');
 
-            // Send success response
+            // Send success response with session ID
             res.status(200).json({
                 success: true,
                 message: 'Login successful',
-                user: userForSession
+                user: userForSession,
+                sessionID: req.sessionID
             });
         } catch (sessionError) {
             console.error('[Auth] Session save error:', sessionError);
