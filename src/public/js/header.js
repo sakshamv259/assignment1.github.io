@@ -2,8 +2,9 @@
 async function updateHeader() {
     try {
         // First check if authenticated
-        const authenticated = await isAuthenticated();
-        console.log('Authentication status:', authenticated);
+        const response = await window.api.verifySession();
+        const authenticated = response.success;
+        console.log('Authentication status:', authenticated, response);
 
         // Try to find auth section using different possible selectors
         const authSection = document.querySelector('#auth-section') || document.querySelector('.nav-auth');
@@ -18,13 +19,10 @@ async function updateHeader() {
             return;
         }
 
-        // If authenticated, get user details
-        const userResponse = await getCurrentUser();
-        console.log('Current user response:', userResponse);
-
-        if (userResponse.success && userResponse.user && userResponse.user.username) {
-            console.log('Setting logged in user header:', userResponse.user.username);
-            setLoggedInHeader(authSection, userResponse.user.username);
+        // User is authenticated and we have the user data from verifySession
+        if (response.user && response.user.username) {
+            console.log('Setting logged in user header:', response.user.username);
+            setLoggedInHeader(authSection, response.user.username);
         } else {
             console.log('No valid user data, showing login button');
             setLoginButton(authSection);
@@ -68,9 +66,9 @@ function setLoginButton(authSection) {
 // Logout handler
 async function handleLogout() {
     try {
-        const result = await logout();
+        const result = await window.api.logout();
         if (result.success) {
-            // Clear any stored data if needed
+            // Redirect to login page
             window.location.href = 'login.html';
         } else {
             console.error('Logout failed:', result.message);
@@ -83,7 +81,8 @@ async function handleLogout() {
 // Check authentication on protected pages
 async function checkAuthAndRedirect() {
     try {
-        const authenticated = await isAuthenticated();
+        const response = await window.api.verifySession();
+        const authenticated = response.success;
         console.log('Protected page auth check:', authenticated);
         
         if (!authenticated) {
