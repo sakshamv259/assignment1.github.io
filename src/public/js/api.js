@@ -1,7 +1,5 @@
 // API Configuration
-const API_BASE_URL = window.location.hostname === 'localhost' 
-    ? 'http://localhost:8080/api'
-    : 'https://volunteer-connect.onrender.com/api';
+const API_BASE_URL = window.location.origin + '/api';
 
 // Common fetch options for all API calls
 const defaultFetchOptions = {
@@ -15,18 +13,16 @@ const defaultFetchOptions = {
 // Authentication functions
 async function login(username, password) {
     try {
+        console.log('Attempting login with:', { username });
         const response = await fetch(`${API_BASE_URL}/auth/login`, {
             ...defaultFetchOptions,
             method: 'POST',
             body: JSON.stringify({ username, password })
         });
 
+        console.log('Login response status:', response.status);
         const data = await response.json();
-        console.log('Login response:', {
-            status: response.status,
-            statusText: response.statusText,
-            data: data
-        });
+        console.log('Login response data:', data);
 
         if (!response.ok) {
             throw new Error(data.message || 'Login failed');
@@ -41,18 +37,16 @@ async function login(username, password) {
 
 async function register(username, email, password) {
     try {
+        console.log('Attempting registration with:', { username, email });
         const response = await fetch(`${API_BASE_URL}/auth/register`, {
             ...defaultFetchOptions,
             method: 'POST',
             body: JSON.stringify({ username, email, password })
         });
 
+        console.log('Register response status:', response.status);
         const data = await response.json();
-        console.log('Register response:', {
-            status: response.status,
-            statusText: response.statusText,
-            data: data
-        });
+        console.log('Register response data:', data);
 
         if (!response.ok) {
             throw new Error(data.message || 'Registration failed');
@@ -73,11 +67,7 @@ async function logout() {
         });
 
         const data = await response.json();
-        console.log('Logout response:', {
-            status: response.status,
-            statusText: response.statusText,
-            data: data
-        });
+        console.log('Logout response:', data);
 
         if (!response.ok) {
             throw new Error(data.message || 'Logout failed');
@@ -97,11 +87,7 @@ async function verifySession() {
         });
 
         const data = await response.json();
-        console.log('Verify session response:', {
-            status: response.status,
-            statusText: response.statusText,
-            data: data
-        });
+        console.log('Verify session response:', data);
 
         if (!response.ok) {
             throw new Error(data.message || 'Session verification failed');

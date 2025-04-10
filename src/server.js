@@ -23,11 +23,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 // CORS configuration
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
-        ? 'https://volunteer-connect.onrender.com'
-        : ['http://localhost:8080', 'http://127.0.0.1:8080'],
+        ? ['https://volunteer-connect.onrender.com', 'https://volunteer-connect.onrender.com/']
+        : ['http://localhost:8080', 'http://127.0.0.1:8080', 'http://localhost:3000'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin'],
     exposedHeaders: ['Set-Cookie']
 }));
 
@@ -46,7 +46,8 @@ app.use(session({
         httpOnly: true,
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        path: '/'
+        path: '/',
+        domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
     },
     store: MongoStore.create({
         mongoUrl: process.env.MONGODB_URI,
@@ -67,38 +68,13 @@ app.use((req, res, next) => {
 
 // Debug middleware
 app.use((req, res, next) => {
-    console.log(`${req.method} ${req.path}`, {
-        sessionId: req.sessionID,
-        hasSession: !!req.session,
-        user: req.session?.user,
-        body: req.body,
-        query: req.query,
-        params: req.params
-    });
-    next();
-});
-
-// Debug middleware for session tracking
-app.use((req, res, next) => {
-    console.log('Session debug:', {
-        sessionID: req.sessionID,
-        session: req.session,
-        authenticated: req.session?.authenticated,
-        user: req.session?.user,
-        cookies: req.cookies,
-        method: req.method,
-        path: req.path
-    });
-    next();
-});
-
-// Simplified session debug middleware
-app.use((req, res, next) => {
     console.log('Request:', {
         method: req.method,
         path: req.path,
         sessionID: req.sessionID,
-        authenticated: req.session?.authenticated
+        authenticated: req.session?.authenticated,
+        cookies: req.cookies,
+        body: req.method === 'POST' ? req.body : undefined
     });
     next();
 });
