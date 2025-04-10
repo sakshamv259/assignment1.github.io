@@ -23,7 +23,7 @@ services:
         value: "true"
       - path: /*
         name: Access-Control-Allow-Origin
-        value: "${CORS_ORIGIN}"
+        value: "https://sakshamv259.github.io"
       - path: /*
         name: Access-Control-Allow-Methods
         value: "GET,POST,PUT,DELETE,OPTIONS"
@@ -33,5 +33,8 @@ services:
       - path: /*
         name: Vary
         value: "Origin"
+      - path: /*
+        name: Strict-Transport-Security
+        value: "max-age=31536000; includeSubDomains"
     domains:
       - volunteer-backend-cy21.onrender.com 

@@ -82,6 +82,9 @@ const sessionConfig = {
     })
 };
 
+// Apply session middleware
+app.use(session(sessionConfig));
+
 // Debug middleware
 app.use((req, res, next) => {
     console.log('Request:', {
