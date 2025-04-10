@@ -3,6 +3,8 @@ const User = require('../models/User');
 // At the top of the file, add allowed origins
 const ALLOWED_ORIGINS = [
     'https://volunteer-backend-cy21.onrender.com',
+    'https://assignment1-github-io.vercel.app',
+    'https://sakshamv259.github.io',
     'http://localhost:3000',
     'http://localhost:8080'
 ];
@@ -80,6 +82,19 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
     try {
+        // Set CORS headers first
+        const origin = req.get('origin');
+        console.log('[Auth] Request origin:', origin);
+        
+        if (ALLOWED_ORIGINS.includes(origin)) {
+            res.header('Access-Control-Allow-Origin', origin);
+            res.header('Access-Control-Allow-Credentials', 'true');
+            res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
+            res.header('Access-Control-Allow-Headers', 'Content-Type, Accept, X-Session-ID');
+        } else {
+            console.warn('[Auth] Unauthorized origin:', origin);
+        }
+
         // Log complete request details
         console.log('[Auth] Login request:', {
             body: req.body,
@@ -208,15 +223,6 @@ const login = async (req, res) => {
                     path: req.session.cookie.path
                 }
             });
-
-            // Set CORS headers
-            const origin = req.get('origin');
-            if (ALLOWED_ORIGINS.includes(origin)) {
-                res.header('Access-Control-Allow-Origin', origin);
-            }
-            res.header('Access-Control-Allow-Credentials', 'true');
-            res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
-            res.header('Access-Control-Allow-Headers', 'Content-Type, Accept, X-Session-ID');
 
             // Send success response
             return res.status(200).json({

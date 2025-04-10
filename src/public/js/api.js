@@ -1,6 +1,13 @@
 // API Configuration
-const API_BASE_URL = 'https://volunteer-backend-cy21.onrender.com/api';
+const getApiBaseUrl = () => {
+    const hostname = window.location.hostname;
+    if (hostname === 'sakshamv259.github.io' || hostname === 'assignment1-github-io.vercel.app') {
+        return 'https://volunteer-backend-cy21.onrender.com/api';
+    }
+    return 'http://localhost:8080/api';
+};
 
+const API_BASE_URL = getApiBaseUrl();
 console.log('[API] Using base URL:', API_BASE_URL);
 
 // Debug flag
@@ -12,8 +19,7 @@ const defaultFetchOptions = {
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
-    },
-    mode: 'cors'
+    }
 };
 
 // Helper function for logging
@@ -40,28 +46,23 @@ async function login(username, password) {
         const response = await fetch(`${API_BASE_URL}/auth/login`, {
             ...defaultFetchOptions,
             method: 'POST',
-            headers: {
-                ...defaultFetchOptions.headers,
-                'Origin': window.location.origin
-            },
             body: JSON.stringify({ username, password })
         });
 
         // Log response details for debugging
-        const responseHeaders = {};
-        response.headers.forEach((value, key) => {
-            responseHeaders[key] = value;
-        });
+        console.log('[API] Login response status:', response.status);
+        console.log('[API] Login response headers:', Object.fromEntries([...response.headers.entries()]));
 
-        console.log('[API] Login response:', {
-            status: response.status,
-            statusText: response.statusText,
-            headers: responseHeaders,
-            ok: response.ok
-        });
-
-        const data = await response.json();
-        console.log('[API] Login response data:', data);
+        let data;
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            data = await response.json();
+            console.log('[API] Login response data:', data);
+        } else {
+            const text = await response.text();
+            console.error('[API] Non-JSON response:', text);
+            throw new Error('Invalid response format from server');
+        }
 
         // Handle non-200 responses
         if (!response.ok) {
@@ -76,26 +77,11 @@ async function login(username, password) {
             throw error;
         }
 
-        // Validate response data
-        if (!data.success || !data.user) {
-            console.error('[API] Invalid login response:', data);
-            throw new Error('Invalid login response from server');
-        }
-
-        // Store session info in localStorage
+        // Store session info
         if (data.sessionID) {
             localStorage.setItem('sessionID', data.sessionID);
             localStorage.setItem('user', JSON.stringify(data.user));
-            console.log('[API] Session data stored:', {
-                sessionID: data.sessionID,
-                user: data.user.username
-            });
         }
-
-        console.log('[API] Login successful:', {
-            username: data.user.username,
-            sessionID: data.sessionID
-        });
 
         return {
             success: true,
@@ -109,7 +95,6 @@ async function login(username, password) {
             stack: error.stack
         });
 
-        // Rethrow with more descriptive message
         throw new Error(
             error.data?.message || 
             error.message || 
