@@ -23,7 +23,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // CORS configuration
 const allowedOrigins = process.env.NODE_ENV === 'production'
-    ? ['https://sakshamv259.github.io', 'https://assignment1-github-io.vercel.app']
+    ? ['https://sakshamv259.github.io', 'https://assignment1-github-io.vercel.app', 'https://volunteer-backend-cy21.onrender.com']
     : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5500', 'http://localhost:8080'];
 
 console.log('Allowed Origins:', allowedOrigins);
@@ -32,9 +32,14 @@ console.log('Environment:', process.env.NODE_ENV);
 const corsOptions = {
     origin: function (origin, callback) {
         console.log('Request origin:', origin);
-        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) {
+            return callback(null, true);
+        }
+        if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
+            console.log('Origin not allowed:', origin);
             callback(new Error('Not allowed by CORS'));
         }
     },
@@ -45,6 +50,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+app.enable('trust proxy'); // Add this for secure cookies behind proxy
 
 // Body parsing middleware
 app.use(express.json());
@@ -57,16 +63,19 @@ app.use(session({
     saveUninitialized: false,
     name: 'sessionId',
     rolling: true,
+    proxy: true, // Add this for secure cookies behind proxy
     cookie: {
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        domain: process.env.NODE_ENV === 'production' ? '.render.com' : undefined
+        domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
     },
     store: MongoStore.create({
         mongoUrl: process.env.MONGODB_URI,
-        ttl: 24 * 60 * 60 // 24 hours
+        ttl: 24 * 60 * 60, // 24 hours
+        autoRemove: 'native',
+        touchAfter: 24 * 3600 // Only update the session every 24 hours unless the data changes
     })
 }));
 
@@ -79,6 +88,7 @@ app.use((req, res, next) => {
         sessionID: req.sessionID,
         authenticated: req.session?.authenticated,
         cookies: req.cookies,
+        secure: req.secure,
         body: req.method === 'POST' ? req.body : undefined
     });
     next();
@@ -97,7 +107,8 @@ app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'ok',
         timestamp: new Date().toISOString(),
-        uptime: process.uptime()
+        uptime: process.uptime(),
+        env: process.env.NODE_ENV
     });
 });
 
@@ -116,7 +127,7 @@ routes.forEach(route => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-    console.error(err.stack);
+    console.error('Error:', err);
     res.status(500).json({ 
         success: false, 
         message: 'Internal Server Error',
