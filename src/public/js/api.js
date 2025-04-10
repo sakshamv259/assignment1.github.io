@@ -11,8 +11,7 @@ const defaultFetchOptions = {
     credentials: 'include',
     headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Origin': 'https://volunteer-backend-cy21.onrender.com'
+        'Accept': 'application/json'
     },
     mode: 'cors'
 };
@@ -28,9 +27,18 @@ function log(...args) {
 async function login(username, password) {
     try {
         console.log('[API] Login attempt for user:', username);
+        
+        // Get the current origin
+        const origin = window.location.origin;
+        console.log('[API] Request origin:', origin);
+
         const response = await fetch(`${API_BASE_URL}/auth/login`, {
             ...defaultFetchOptions,
             method: 'POST',
+            headers: {
+                ...defaultFetchOptions.headers,
+                'Origin': origin
+            },
             body: JSON.stringify({ username, password })
         });
 
@@ -58,7 +66,10 @@ async function login(username, password) {
         }
 
         // Store session info
-        localStorage.setItem('sessionID', data.sessionID);
+        if (data.sessionID) {
+            localStorage.setItem('sessionID', data.sessionID);
+            console.log('[API] Session ID stored:', data.sessionID);
+        }
 
         return {
             success: true,
@@ -129,13 +140,15 @@ async function logout() {
 async function verifySession() {
     try {
         const sessionID = localStorage.getItem('sessionID');
-        console.log('[API] Verifying session:', { sessionID });
+        const origin = window.location.origin;
+        console.log('[API] Verifying session:', { sessionID, origin });
 
         const response = await fetch(`${API_BASE_URL}/auth/verify`, {
             ...defaultFetchOptions,
             headers: {
                 ...defaultFetchOptions.headers,
-                'X-Session-ID': sessionID || ''
+                'X-Session-ID': sessionID || '',
+                'Origin': origin
             }
         });
 

@@ -124,9 +124,12 @@ const login = async (req, res) => {
         req.session.createdAt = new Date();
 
         // Set secure cookie options for Render deployment
-        req.session.cookie.secure = true;
-        req.session.cookie.sameSite = 'none';
-        req.session.cookie.domain = 'volunteer-backend-cy21.onrender.com';
+        if (process.env.NODE_ENV === 'production') {
+            req.session.cookie.secure = true;
+            req.session.cookie.sameSite = 'none';
+            // Remove domain setting as it can cause issues with cross-origin
+            req.session.cookie.maxAge = 24 * 60 * 60 * 1000; // 24 hours
+        }
 
         // Save session explicitly with proper error handling
         try {
@@ -150,8 +153,11 @@ const login = async (req, res) => {
             });
 
             // Set CORS headers for Render deployment
+            const origin = req.get('origin');
+            if (origin) {
+                res.header('Access-Control-Allow-Origin', origin);
+            }
             res.header('Access-Control-Allow-Credentials', 'true');
-            res.header('Access-Control-Allow-Origin', 'https://volunteer-backend-cy21.onrender.com');
             res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
             res.header('Access-Control-Allow-Headers', 'Content-Type, Accept, X-Session-ID');
 
