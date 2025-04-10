@@ -2,12 +2,17 @@ const User = require('../models/User');
 
 const register = async (req, res) => {
     try {
+        console.log('Register attempt:', req.body);
         const { username, email, password } = req.body;
 
         // Check if user already exists
         const existingUser = await User.findOne({ $or: [{ email }, { username }] });
         if (existingUser) {
-            return res.status(400).json({ message: 'User already exists' });
+            console.log('User already exists:', { username, email });
+            return res.status(400).json({ 
+                success: false,
+                message: 'User already exists with this username or email' 
+            });
         }
 
         // Create new user
@@ -18,22 +23,51 @@ const register = async (req, res) => {
         });
 
         await user.save();
+        console.log('User created successfully:', { username, email });
 
-        // Set session
-        req.session.userId = user._id;
-        req.session.userRole = user.role;
+        // Create session user object (excluding sensitive data)
+        const userForSession = {
+            id: user._id.toString(),
+            username: user.username,
+            email: user.email,
+            role: user.role
+        };
 
-        res.status(201).json({
-            message: 'User registered successfully',
-            user: {
-                id: user._id,
-                username: user.username,
-                email: user.email,
-                role: user.role
+        // Set session data
+        req.session.user = userForSession;
+        req.session.authenticated = true;
+
+        // Save session explicitly
+        req.session.save((err) => {
+            if (err) {
+                console.error('Session save error:', err);
+                return res.status(500).json({ 
+                    success: false, 
+                    message: 'Error during registration', 
+                    error: err.message 
+                });
             }
+
+            // Log successful session creation
+            console.log('Registration session created:', {
+                sessionID: req.sessionID,
+                user: userForSession
+            });
+
+            // Send success response
+            res.status(201).json({
+                success: true,
+                message: 'User registered successfully',
+                user: userForSession
+            });
         });
     } catch (error) {
-        res.status(500).json({ message: 'Error registering user', error: error.message });
+        console.error('Registration error:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Error registering user', 
+            error: error.message 
+        });
     }
 };
 
