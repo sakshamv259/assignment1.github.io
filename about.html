@@ -1,79 +1,103 @@
-<!-- Name: Saksham Verma, Arsh-->
-<!-- Student ID: 100886325-->
-<!-- Date:23-02-2025 -->
+<!-- Name: Saksham Verma, Arsh -->
+<!-- Student ID: 100886325 -->
+<!-- Date: 23-02-2025 -->
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <link rel="stylesheet" href="public/css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <title>About - Volunteer Connect</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-    <script type="module" src="public/js/main.js"></script>
-    <title>About</title>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
-    <header class="d-flex justify-content-center py-3 bg-dark">
-        <nav class="navbar navbar-expand-xl navbar-dark">
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-          </button>
-          <div class="collapse navbar-collapse navbar-custom-collapse" id="navbarNav">
-            <ul class="navbar-nav">
-              <li class="nav-item">
-                <a href="index.html" class="navitm home text-light nav-link active" aria-current="page" id="home">Home</a>
-              </li>
-              <li class="nav-item">
-                <a href="opportunities.html" class="navitm opp_to_volunteer text-light nav-link" id="opp">Opportunities</a>
-              </li>
-              <li class="nav-item">
-                <a href="events.html" class=" navitm event text-light nav-link" id="event">Events</a>
-              </li>
-              <li class="nav-item">
-                <a href="contact.html" class="navitm contact text-light nav-link" id="contact">Contact Us</a>
-              </li>
-              <li class="nav-item">
-                <a href="about.html" class="  navitm abt text-light nav-link" id="about">About</a>
-              </li>
-              <li class="nav-item"><a href="news.html" class="navitm news text-light nav-link active">News</a></li>
-              <li class="nav-item"><a href="gallery.html" class="navitm text-light nav-link active">Gallery</a></li>
-              <li class="nav-item dropdown">
-                <a class="text-light nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  More
-                </a>
-                <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                  <li><a class="dropdown-item" href="#">Privacy Policy</a></li>
-                  <li><a class="dropdown-item" href="#">Terms of Service</a></li>
-                </ul>
-              </li>
-              <li class="nav-item nav-auth"></li>
-
-            </ul>
-          </div>
+    <header class="site-header">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container">
+                <a class="navbar-brand" href="index.html">Volunteer Connect</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.html">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="opportunities.html">Opportunities</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="events.html">Events</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="contact.html">Contact Us</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="about.html">About</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="news.html">News</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="gallery.html">Gallery</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="eventPlanning.html">Event Planning</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="statistics.html">Statistics</a>
+                        </li>
+                    </ul>
+                    <div class="text-light" id="auth-section">
+                        <!-- Authentication section will be populated by header.js -->
+                    </div>
+                </div>
+            </div>
         </nav>
-      </header>  
-       <div class="container mt-5">
-         <h1 class="">Somewhat About Myself.</h1>
-         <div class="row p-4 pb-0 pe-lg-0 pt-lg-5 align-items-center rounded-3 border shadow-lg">
-           <div class="col-lg-7 p-3 p-lg-5 pt-lg-3">
-             <h1 class="display-4 fw-bold lh-1 text-body-emphasis">Meet Saksham Verma</h1>
-             <p class="lead">Hello folks, my name is Saksham Verma, an upcoming amazing full-stack-developer. My goal in life is to excel in the field of Technology. I am currently a student of durham college persuing Computer Programming as my Program.</p>
-             <div class="d-grid gap-2 d-md-flex justify-content-md-start mb-4 mb-lg-3">
-               <a href="contact.html"><button type="button" class="btn btn-primary btn-lg px-5 me-md-2 fw-bold">Give me a Waive?</button></a>
-             </div>
-           </div>
-           <div class="col-lg-4 offset-lg-1 p-0 overflow-hidden shadow-lg">
-               <img class="rounded-lg-3" src="public/img/handsome.jpg" alt="handsome"  width="100%">
-           </div>
-         </div>
-     </div>
- 
-     <button id="backToTop" class="back-to-top">Back to Top</button>
-     <script src="/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
- </body>
- <footer class="py-3 my-4">
-     <p class="text-center text-body-secondary">© 2024 SAKSHAM VERMA</p>
- </footer>
- </html>
+    </header>
+
+    <div class="container mt-5">
+        <h1>Somewhat About Myself</h1>
+        <div class="row p-4 pb-0 pe-lg-0 pt-lg-5 align-items-center rounded-3 border shadow-lg">
+            <div class="col-lg-7 p-3 p-lg-5 pt-lg-3">
+                <h1 class="display-4 fw-bold lh-1 text-body-emphasis">Meet Saksham Verma</h1>
+                <p class="lead">Hello folks, my name is Saksham Verma — an aspiring full-stack developer. My goal in life is to excel in the field of technology. I am currently a student at Durham College pursuing Computer Programming.</p>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-start mb-4 mb-lg-3">
+                    <a href="contact.html"><button type="button" class="btn btn-success btn-lg px-5 me-md-2 fw-bold">Give me a Wave!</button></a>
+                </div>
+            </div>
+            <div class="col-lg-4 offset-lg-1 p-0 overflow-hidden shadow-lg">
+                <img class="rounded-lg-3" src="public/img/handsome.jpg" alt="Photo of Saksham Verma" width="100%">
+            </div>
+        </div>
+    </div>
+
+    <button id="backToTop" class="back-to-top">↑ Back to Top</button>
+
+    <script src="js/api.js"></script>
+    <script src="js/header.js"></script>
+    <script>
+        // Back to top button logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const backToTopBtn = document.getElementById("backToTop");
+            window.onscroll = function() {
+                backToTopBtn.style.display = (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) ? "block" : "none";
+            };
+            backToTopBtn.onclick = function() {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+        });
+    </script>
+
+    <footer class="py-3 my-4">
+        <p class="text-center text-body-secondary">© <span id="year"></span> Saksham Verma</p>
+    </footer>
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>

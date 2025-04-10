@@ -36,7 +36,20 @@ $(document).ready(function () {
             }, 3000);
         }
     });
-
+    function login() {
+        const usernameInput = document.getElementById('username').value;
+        const passwordInput = document.getElementById('password').value;
+        
+        // Add your authentication check here (you can customize this)
+        if (usernameInput && passwordInput) {
+            localStorage.setItem('username', usernameInput);
+            alert('Login successful!');
+            window.location.href = 'index.html'; // redirect to home
+        } else {
+            alert('Please enter both username and password.');
+        }
+    }
+    
     // Logout function
     $("#logoutBtn").on("click", function () {
         localStorage.removeItem("authenticatedUser");

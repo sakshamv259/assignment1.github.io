@@ -132,6 +132,14 @@ $(function () {
     // }
 
 
+    if (localStorage.getItem('loggedInUser')) {
+        navBarHtml += `
+            <li><a href="statistics.html"><i class="fa fa-chart-bar"></i> Statistics</a></li>
+        `;
+    }
+    
+
+
 
 
     function displayEventsPage() {
@@ -263,4 +271,80 @@ $(function () {
         }
     }
     start();
+
+    // Login form submission
+    $('#loginForm').on('submit', async function(e) {
+        e.preventDefault();
+        
+        try {
+            const response = await fetch('http://localhost:3000/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    username: $('#username').val(),
+                    password: $('#password').val()
+                })
+            });
+
+            const data = await response.json();
+            
+            if (response.ok) {
+                localStorage.setItem('user', JSON.stringify(data.user));
+                window.location.href = 'index.html';
+            } else {
+                alert(data.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred while logging in');
+        }
+    });
+
+    // Create new event
+    async function createEvent(eventData) {
+        try {
+            const response = await fetch('http://localhost:3000/api/events', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify(eventData)
+            });
+
+            const data = await response.json();
+            
+            if (response.ok) {
+                return data.event;
+            } else {
+                throw new Error(data.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            throw error;
+        }
+    }
+
+    // Load events
+    async function loadEvents() {
+        try {
+            const response = await fetch('http://localhost:3000/api/events', {
+                credentials: 'include'
+            });
+
+            const events = await response.json();
+            
+            if (response.ok) {
+                displayEvents(events);
+            } else {
+                throw new Error('Failed to load events');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to load events');
+        }
+    }
 });
