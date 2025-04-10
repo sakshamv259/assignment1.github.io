@@ -30,38 +30,51 @@ app.use((req, res, next) => {
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-// CORS configuration for API endpoints
-const corsOptions = {
-    origin: function(origin, callback) {
-        const allowedOrigins = [
-            'https://volunteer-backend-cy21.onrender.com',
-            'https://sakshamv259.github.io',
-            'https://assignment1-github-io.vercel.app',
-            'http://localhost:3000',
-            'http://localhost:8080',
-            'http://127.0.0.1:5500'  // For local development with Live Server
-        ];
-        
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-        
-        if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
-            callback(null, true);
-        } else {
-            console.warn(`[CORS] Blocked request from unauthorized origin: ${origin}`);
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
-    exposedHeaders: ['Set-Cookie'],
-    maxAge: 600 // Cache preflight request for 10 minutes
-};
-
-// Trust first proxy and apply CORS before other middleware
-app.set('trust proxy', 1);
-app.use(cors(corsOptions));
+// CORS configuration with detailed error handling
+app.use((req, res, next) => {
+    // Get the request origin
+    const origin = req.headers.origin;
+    console.log(`[CORS] Request from origin: ${origin || 'unknown'}`);
+    
+    // Define all allowed origins
+    const allowedOrigins = [
+        'https://volunteer-backend-cy21.onrender.com',
+        'https://sakshamv259.github.io',
+        'https://assignment1-github-io.vercel.app',
+        'http://localhost:3000',
+        'http://localhost:8080',
+        'http://127.0.0.1:5500',
+        'http://localhost:5500'
+    ];
+    
+    // Check if origin is allowed (or allow any in development)
+    if (origin && (allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production')) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        console.log(`[CORS] Allowed origin: ${origin}`);
+    } else if (!origin) {
+        // Handle requests with no origin (like mobile apps or curl requests)
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        console.log('[CORS] No origin, allowing *');
+    } else {
+        console.warn(`[CORS] Blocked unauthorized origin: ${origin}`);
+        // Don't block request, just log it
+    }
+    
+    // Required CORS headers
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Expose-Headers', 'Set-Cookie');
+    
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+        console.log('[CORS] Responding to OPTIONS preflight request');
+        res.status(200).end();
+        return;
+    }
+    
+    next();
+});
 
 // Session configuration
 const sessionConfig = {

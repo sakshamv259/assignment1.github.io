@@ -24,38 +24,69 @@ function log(...args) {
 // Authentication functions
 async function login(username, password) {
     try {
-        console.log('Login attempt:', { username, url: `${API_BASE_URL}/auth/login` });
-
-        const response = await fetch(`${API_BASE_URL}/auth/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            credentials: 'include',
-            mode: 'cors',
-            body: JSON.stringify({ username, password })
+        console.log('Login attempt:', { 
+            username, 
+            url: `${API_BASE_URL}/auth/login`,
+            environment: process.env.NODE_ENV || 'development'
         });
 
-        const data = await response.json();
-        console.log('Login API response:', data);  // Debug log
+        // Add a try/catch specifically for the fetch operation
+        let response;
+        try {
+            response = await fetch(`${API_BASE_URL}/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                credentials: 'include',
+                mode: 'cors',
+                body: JSON.stringify({ username, password })
+            });
+            
+            console.log('Fetch completed with status:', response.status);
+        } catch (fetchError) {
+            console.error('Network error during fetch:', fetchError);
+            return { 
+                success: false, 
+                message: `Network error connecting to server: ${fetchError.message}. Please check your internet connection and try again.`
+            };
+        }
+
+        // Add a try/catch for parsing JSON
+        let data;
+        try {
+            data = await response.json();
+            console.log('Login API response:', response.status, data);
+        } catch (jsonError) {
+            console.error('Error parsing JSON response:', jsonError);
+            return { 
+                success: false, 
+                message: 'Error parsing server response. Please try again later.'
+            };
+        }
 
         if (response.ok && data.success && data.user) {
+            // Store user in localStorage for persistence
+            localStorage.setItem('user', JSON.stringify(data.user));
+            console.log('User data stored in localStorage');
+            
             return {
                 success: true,
-                user: data.user
+                user: data.user,
+                message: data.message || 'Login successful'
             };
         } else {
             return { 
                 success: false, 
-                message: data.message || 'Login failed. Please check your credentials.'
+                message: data.message || `Login failed with status ${response.status}. Please check your credentials.`
             };
         }
     } catch (error) {
         console.error('Login API error:', error);
         return { 
             success: false, 
-            message: 'An error occurred during login. Please try again.'
+            message: 'An unexpected error occurred during login. Please try again.'
         };
     }
 }
