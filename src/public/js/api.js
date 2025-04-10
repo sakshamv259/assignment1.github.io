@@ -1,14 +1,5 @@
 // API Configuration
-const getApiBaseUrl = () => {
-    const hostname = window.location.hostname;
-    if (hostname === 'sakshamv259.github.io' || hostname === 'assignment1-github-io.vercel.app') {
-        return 'https://volunteer-backend-cy21.onrender.com/api';
-    }
-    return 'http://localhost:8080/api';
-};
-
-const API_BASE_URL = getApiBaseUrl();
-console.log('[API] Using base URL:', API_BASE_URL);
+const API_BASE_URL = 'https://volunteer-backend-cy21.onrender.com/api';
 
 // Debug flag
 const DEBUG = true;
@@ -19,7 +10,8 @@ const defaultFetchOptions = {
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
-    }
+    },
+    mode: 'cors'
 };
 
 // Helper function for logging
@@ -32,174 +24,142 @@ function log(...args) {
 // Authentication functions
 async function login(username, password) {
     try {
-        console.log('[API] Login attempt:', {
-            username,
-            url: `${API_BASE_URL}/auth/login`,
-            origin: window.location.origin
-        });
+        console.log('Login attempt:', { username, url: `${API_BASE_URL}/auth/login` });
 
         const response = await fetch(`${API_BASE_URL}/auth/login`, {
-            ...defaultFetchOptions,
             method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            credentials: 'include',
+            mode: 'cors',
             body: JSON.stringify({ username, password })
         });
 
-        console.log('[API] Login response status:', response.status);
-        console.log('[API] Login response headers:', Object.fromEntries([...response.headers.entries()]));
-
         const data = await response.json();
-        console.log('[API] Login response data:', data);
+        console.log('Login API response:', data);  // Debug log
 
-        if (!response.ok) {
-            throw new Error(data.message || 'Login failed');
+        if (response.ok && data.success && data.user) {
+            return {
+                success: true,
+                user: data.user
+            };
+        } else {
+            return { 
+                success: false, 
+                message: data.message || 'Login failed. Please check your credentials.'
+            };
         }
-
-        // Store user info in localStorage for client-side access
-        if (data.user) {
-            localStorage.setItem('user', JSON.stringify(data.user));
-            console.log('[API] User data stored in localStorage');
-        }
-
-        // Check if there's a return URL to redirect to
-        const returnTo = data.returnTo || sessionStorage.getItem('returnTo') || '/';
-        console.log('[API] Return URL after login:', returnTo);
-        
-        // Clear the stored return URL
-        sessionStorage.removeItem('returnTo');
-        
-        // Small delay to ensure session is fully established
-        setTimeout(() => {
-            window.location.href = returnTo;
-        }, 300);
-        
-        return {
-            success: true,
-            user: data.user
-        };
     } catch (error) {
-        console.error('[API] Login error:', error);
-        throw error;
+        console.error('Login API error:', error);
+        return { 
+            success: false, 
+            message: 'An error occurred during login. Please try again.'
+        };
     }
 }
 
 async function register(username, email, password) {
     try {
-        console.log('Attempting registration with:', { username, email });
         const response = await fetch(`${API_BASE_URL}/auth/register`, {
             ...defaultFetchOptions,
             method: 'POST',
             body: JSON.stringify({ username, email, password })
         });
 
-        console.log('Register response status:', response.status);
         const data = await response.json();
-        console.log('Register response data:', data);
 
-        if (!response.ok) {
-            throw new Error(data.message || 'Registration failed');
+        if (response.ok) {
+            return { 
+                success: true, 
+                message: 'Registration successful! Please login.'
+            };
+        } else {
+            return { 
+                success: false, 
+                message: data.message || 'Registration failed. Please try again.'
+            };
         }
-
-        return data;
     } catch (error) {
-        console.error('Register error:', error);
-        throw error;
+        console.error('Registration error:', error);
+        return { 
+            success: false, 
+            message: 'An error occurred during registration. Please try again.'
+        };
     }
 }
 
 async function logout() {
     try {
-        console.log('[API] Logging out...');
-        
         const response = await fetch(`${API_BASE_URL}/auth/logout`, {
             ...defaultFetchOptions,
             method: 'POST'
         });
 
-        console.log('[API] Logout response:', {
-            status: response.status,
-            ok: response.ok
-        });
-
-        // Clear user data regardless of server response
-        localStorage.removeItem('user');
-        
         const data = await response.json();
+        console.log('Logout API response:', data);  // Debug log
         
-        // Redirect to login page after logout
-        window.location.href = '/login';
-        
-        return {
-            success: response.ok && data.success
-        };
+        if (response.ok) {
+            return { 
+                success: true,
+                message: 'Logged out successfully'
+            };
+        } else {
+            return {
+                success: false,
+                message: data.message || 'Logout failed'
+            };
+        }
     } catch (error) {
-        console.error('[API] Logout error:', error);
-        // Clear user data even on error
-        localStorage.removeItem('user');
-        // Redirect to login page even on error
-        window.location.href = '/login';
-        throw error;
+        console.error('Logout API error:', error);
+        return { 
+            success: false,
+            message: 'Error during logout'
+        };
     }
 }
 
-async function verifySession() {
+// Check authentication status
+async function isAuthenticated() {
     try {
-        console.log('[API] Verifying session at:', `${API_BASE_URL}/auth/verify`);
-        
         const response = await fetch(`${API_BASE_URL}/auth/verify`, {
-            ...defaultFetchOptions,
-            method: 'GET'
-        });
-
-        console.log('[API] Verify session response:', {
-            status: response.status,
-            ok: response.ok
+            ...defaultFetchOptions
         });
 
         const data = await response.json();
+        console.log('Auth verify API response:', data);  // Debug log
         
-        // Update stored user data if verified
-        if (response.ok && data.success && data.user) {
-            localStorage.setItem('user', JSON.stringify(data.user));
-        } else if (!response.ok) {
-            // Clear stored user data if not authenticated
-            localStorage.removeItem('user');
-        }
-        
-        return {
-            isAuthenticated: response.ok && data.success,
-            user: data.user
-        };
+        return response.ok && data.success;
     } catch (error) {
-        console.error('[API] Session verification error:', error);
-        localStorage.removeItem('user');
-        return {
-            isAuthenticated: false,
-            user: null
-        };
+        console.error('Auth verify API error:', error);
+        return false;
     }
 }
 
 // Get current user
 async function getCurrentUser() {
     try {
-        log('Fetching current user...');
-        const response = await fetch(`${API_BASE_URL}/auth/current`, {
-            ...defaultFetchOptions,
-            method: 'GET'
+        const response = await fetch(`${API_BASE_URL}/auth/me`, {
+            ...defaultFetchOptions
         });
 
         const data = await response.json();
-        log('Current user response:', data);
-
-        return {
-            success: response.ok && data.success,
-            user: data.user
-        };
+        console.log('Get current user API response:', data);  // Debug log
+        
+        if (response.ok && data.success && data.user) {
+            return {
+                success: true,
+                user: data.user
+            };
+        } else {
+            throw new Error(data.message || 'Failed to get current user');
+        }
     } catch (error) {
-        log('Current user error:', error);
+        console.error('Get current user API error:', error);
         return {
             success: false,
-            message: 'Failed to fetch current user.'
+            message: error.message || 'Failed to get user information'
         };
     }
 }
@@ -333,7 +293,7 @@ window.api = {
     login,
     register,
     logout,
-    verifySession,
+    isAuthenticated,
     getCurrentUser
 };
 window.getEvents = getEvents;
