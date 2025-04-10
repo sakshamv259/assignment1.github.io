@@ -30,36 +30,19 @@ app.use((req, res, next) => {
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-// CORS configuration for API endpoints
-const corsOptions = {
-    origin: ['https://volunteer-backend-cy21.onrender.com', 'http://localhost:3000'],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin'],
-    exposedHeaders: ['Set-Cookie']
-};
-
-// Trust first proxy for secure cookies
-app.enable('trust proxy');
-app.use(cors(corsOptions));
-
-// Body parsing middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
 // Session configuration
 const sessionConfig = {
     secret: process.env.SESSION_SECRET || 'your-secret-key',
-    resave: false,
+    resave: true,
     saveUninitialized: false,
     name: 'sessionId',
     rolling: true,
     proxy: true,
     cookie: {
         httpOnly: true,
-        secure: true, // Always true for Render deployment
-        sameSite: 'none', // Required for cross-origin cookies
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        maxAge: 24 * 60 * 60 * 1000
     },
     store: MongoStore.create({
         mongoUrl: process.env.MONGODB_URI,
@@ -75,8 +58,38 @@ const sessionConfig = {
 // Apply session middleware
 app.use(session(sessionConfig));
 
+// Debug middleware for session tracking
+app.use((req, res, next) => {
+    console.log('[Session Debug]', {
+        sessionID: req.sessionID,
+        hasSession: !!req.session,
+        user: req.session?.user?.username || 'none',
+        path: req.path
+    });
+    next();
+});
+
 // Attach user to request if authenticated
 app.use(attachUser);
+
+// CORS configuration for API endpoints
+const corsOptions = {
+    origin: process.env.NODE_ENV === 'production' 
+        ? ['https://volunteer-backend-cy21.onrender.com']
+        : ['http://localhost:3000', 'http://localhost:8080'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin'],
+    exposedHeaders: ['Set-Cookie']
+};
+
+// Trust first proxy for secure cookies
+app.enable('trust proxy');
+app.use(cors(corsOptions));
+
+// Body parsing middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // API Routes
 app.use('/api/auth', require('./routes/authRoutes'));

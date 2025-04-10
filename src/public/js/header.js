@@ -19,27 +19,21 @@ async function updateHeader() {
         if (response.success && response.user) {
             console.log('[Auth] User is authenticated:', response.user);
             setLoggedInHeader(response.user);
-            // No redirection needed - user is authenticated
+            // User is authenticated, no need for any redirects
             return;
         }
 
         console.log('[Auth] User not authenticated');
         setLoginButton();
             
-        // Only redirect if we're on a protected page
+        // For protected pages, let the server handle the redirect
         if (protectedPages.includes(currentPage)) {
-            console.log('[Auth] Protected page access attempt, storing redirect URL');
-            sessionStorage.setItem('redirectUrl', currentPath);
-            // Let the server handle the redirect
+            console.log('[Auth] Protected page access attempt');
+            // The server's authenticateHtmlRoute middleware will handle the redirect
         }
     } catch (error) {
         console.error('[Auth] Authentication check failed:', error);
         setLoginButton();
-        
-        // Only store redirect URL if we're on a protected page
-        if (protectedPages.includes(currentPage)) {
-            sessionStorage.setItem('redirectUrl', currentPath);
-        }
     }
 }
 
@@ -86,20 +80,18 @@ async function handleLogout() {
     try {
         const result = await window.api.logout();
         if (result.success) {
-            // Redirect to login page after logout
             window.location.href = '/login';
         } else {
-            console.error('Logout failed:', result.message);
+            console.error('[Auth] Logout failed:', result.message);
         }
     } catch (error) {
-        console.error('Logout error:', error);
+        console.error('[Auth] Logout error:', error);
     }
 }
 
 // Initialize header on page load
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('[Header] Page loaded, initializing header...');
-    
     try {
         await updateHeader();
     } catch (error) {
