@@ -52,25 +52,49 @@ const sessionConfig = {
         crypto: {
             secret: process.env.SESSION_SECRET || 'your-secret-key'
         },
-        // Add these options for better session store handling
         collectionName: 'sessions',
         autoRemoveInterval: 10, // Check expired sessions every 10 minutes
         stringify: false, // Don't stringify session data
-        touchAfter: 24 * 3600 // Only update session if data changes
+        touchAfter: 24 * 3600, // Only update session if data changes
+        // Add connection options for better reliability
+        mongoOptions: {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+            serverSelectionTimeoutMS: 10000,
+            heartbeatFrequencyMS: 30000
+        }
     })
 };
 
 // Apply session middleware
 app.use(session(sessionConfig));
 
-// Debug middleware for session tracking
+// Enhanced debug middleware for session tracking
 app.use((req, res, next) => {
-    console.log('[Session Debug]', {
+    const sessionInfo = {
         sessionID: req.sessionID,
         hasSession: !!req.session,
         user: req.session?.user?.username || 'none',
-        path: req.path
-    });
+        path: req.path,
+        method: req.method,
+        timestamp: new Date().toISOString(),
+        returnTo: req.session?.returnTo || 'none',
+        isSecure: req.secure,
+        userAgent: req.get('User-Agent')
+    };
+
+    console.log('[Session Debug]', sessionInfo);
+
+    // Track session expiry
+    if (req.session) {
+        const expiresAt = new Date(Date.now() + sessionConfig.cookie.maxAge);
+        console.log('[Session Expiry]', {
+            sessionID: req.sessionID,
+            expiresAt: expiresAt.toISOString(),
+            timeRemaining: Math.floor((expiresAt - Date.now()) / 1000) + ' seconds'
+        });
+    }
+
     next();
 });
 
@@ -201,30 +225,44 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// API endpoint to check authentication status
+// Enhanced API endpoint to check authentication status
 app.get('/api/auth/check', (req, res) => {
     const isAuthenticated = !!(req.session && req.session.user);
     const currentUrl = req.get('Referer') || req.query.currentUrl;
+    const clientIP = req.ip;
     
     console.log('[Auth Check] Status:', { 
         isAuthenticated, 
         sessionID: req.sessionID,
         user: isAuthenticated ? req.session.user.username : null,
         currentUrl,
-        returnTo: req.session?.returnTo
+        returnTo: req.session?.returnTo,
+        timestamp: new Date().toISOString(),
+        clientIP,
+        userAgent: req.get('User-Agent')
     });
 
     // If there's a current URL and user is not authenticated, store it for later redirect
     if (!isAuthenticated && currentUrl && !currentUrl.includes('/login')) {
         req.session.returnTo = currentUrl;
-        console.log('[Auth Check] Stored returnTo URL:', currentUrl);
+        req.session.lastAttemptedAccess = {
+            url: currentUrl,
+            timestamp: new Date().toISOString(),
+            userAgent: req.get('User-Agent'),
+            ip: clientIP
+        };
+        console.log('[Auth Check] Stored access attempt:', req.session.lastAttemptedAccess);
     }
 
     res.json({ 
         success: true,
         isAuthenticated,
-        user: isAuthenticated ? req.session.user : null,
-        returnTo: isAuthenticated ? (req.session.returnTo || '/') : undefined
+        user: isAuthenticated ? {
+            username: req.session.user.username,
+            lastAccess: new Date().toISOString()
+        } : null,
+        returnTo: isAuthenticated ? (req.session.returnTo || '/') : undefined,
+        sessionExpiry: req.session?.cookie?.expires
     });
 });
 
