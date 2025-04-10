@@ -22,7 +22,7 @@ connectDB();
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Static files
+// Static files - before any middleware
 app.use(express.static(path.join(__dirname, 'public')));
 
 // CORS configuration - must come before other middleware
@@ -110,7 +110,7 @@ app.use((req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 8080; // Changed to 8080 to match frontend expectation
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 }); 
