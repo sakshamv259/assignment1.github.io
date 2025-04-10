@@ -10,8 +10,6 @@ require('dotenv').config();
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const eventRoutes = require('./routes/eventRoutes');
-const opportunityRoutes = require('./routes/opportunityRoutes');
-const statisticsRoutes = require('./routes/statisticsRoutes');
 
 // Initialize express app
 const app = express();
@@ -77,8 +75,6 @@ app.use((req, res, next) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
-app.use('/api/opportunities', opportunityRoutes);
-app.use('/api/statistics', statisticsRoutes);
 
 // Serve index.html for the root route
 app.get('/', (req, res) => {
