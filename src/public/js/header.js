@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await updateHeader();
     
     // Then check if this is a protected page
-    const protectedPages = ['events.html', 'eventPlanning.html', 'statistics.html'];
+    const protectedPages = ['event-planning.html', 'statistics.html'];
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
     console.log('Current page:', currentPage);
     

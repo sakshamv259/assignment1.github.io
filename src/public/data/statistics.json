@@ -1,0 +1,20 @@
+{
+    "months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    "visitors": [120, 150, 180, 200, 250, 300, 350, 400, 380, 320, 280, 260],
+    "categories": {
+        "Community Service": 35,
+        "Environmental": 25,
+        "Education": 20,
+        "Healthcare": 15,
+        "Other": 5
+    },
+    "volunteerHours": {
+        "total": 4500,
+        "monthly": [350, 380, 420, 450, 500, 550, 600, 650, 600, 550, 500, 450]
+    },
+    "impact": {
+        "peopleHelped": 2500,
+        "eventsOrganized": 48,
+        "activeVolunteers": 150
+    }
+} 
